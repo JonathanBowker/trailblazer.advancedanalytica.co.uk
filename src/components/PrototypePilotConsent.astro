@@ -1,0 +1,62 @@
+---
+import {
+  defaultPrototypePilotEngagement,
+  prototypePilotPolicyUrl,
+  prototypePilotPolicyVersion,
+} from '../lib/prototypePilotPolicy';
+
+const {
+  engagementName = defaultPrototypePilotEngagement,
+  label = 'I accept the prototype/pilot terms.',
+} = Astro.props as {
+  engagementName?: string;
+  label?: string;
+};
+---
+<div class="prototype-consent" data-prototype-pilot-consent-gate>
+  <label class="prototype-consent__label">
+    <input
+      id="prototype-pilot-consent"
+      type="checkbox"
+      name="prototypePilotConsentAccepted"
+      required
+      data-prototype-pilot-consent
+    />
+    <span>
+      {label}
+      <a href={prototypePilotPolicyUrl} target="_blank" rel="noreferrer">Read the terms</a>.
+    </span>
+  </label>
+  <input type="hidden" name="prototypePilotPolicyUrl" value={prototypePilotPolicyUrl} data-prototype-pilot-policy-url />
+  <input type="hidden" name="prototypePilotPolicyVersion" value={prototypePilotPolicyVersion} data-prototype-pilot-policy-version />
+  <input type="hidden" name="prototypePilotEngagement" value={engagementName} data-prototype-pilot-engagement />
+</div>
+
+<style>
+  .prototype-consent {
+    display: grid;
+    color: #667085;
+    font-size: 0.72rem;
+    line-height: 1.3;
+  }
+
+  .prototype-consent__label {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 7px;
+    align-items: start;
+  }
+
+  .prototype-consent__label input {
+    width: 13px;
+    height: 13px;
+    margin-top: 0;
+    accent-color: #ff1334;
+  }
+
+  .prototype-consent__label a {
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+</style>

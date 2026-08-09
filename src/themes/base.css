@@ -1,0 +1,40 @@
+:root {
+  --tenant-name: "Advanced Analytica";
+  --tenant-logo-url: url("/images/infrastructure/logo.svg");
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Neue Montreal", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-masthead: var(--font-display);
+  --color-ink: #0b1220;
+  --color-paper: #f7f9fc;
+  --color-background: #eef3f8;
+  --color-surface: #ffffff;
+  --color-slate: #334155;
+  --color-steel: #64748b;
+  --color-fog: #dbe4ef;
+  --color-accent: #0f766e;
+  --color-accent-deep: #134e4a;
+  --color-highlight: #f97316;
+  --color-signal: #0f766e;
+  --color-warning: #b45309;
+  --color-success: #15803d;
+  --shadow-soft: 0 24px 60px rgba(15, 23, 42, 0.08);
+  --shadow-outline: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+
+.tenant-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 80%, white), var(--color-background));
+}
+
+.tenant-logo-mark {
+  width: 9rem;
+  height: 2.5rem;
+  display: inline-block;
+  background-image: var(--tenant-logo-url);
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}

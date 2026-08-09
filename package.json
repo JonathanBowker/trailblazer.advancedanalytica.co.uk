@@ -1,0 +1,25 @@
+{
+  "name": "trailblazer-advancedanalytica-co-uk",
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "pnpm@10.23.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "auth:check": "node scripts/check-auth-config.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.3",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.105.3",
+    "@typebot.io/react": "^0.10.7",
+    "astro": "^5.17.1",
+    "pdfjs-dist": "^6.2.108"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  }
+}

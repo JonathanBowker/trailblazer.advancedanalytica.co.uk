@@ -1,0 +1,27 @@
+name: trailblazer-advancedanalytica-co-uk
+region: lon
+domains:
+  - domain: trailblazer.advancedanalytica.co.uk
+    type: PRIMARY
+ingress:
+  rules:
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /
+services:
+  - name: web
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    git:
+      branch: main
+      repo_clone_url: https://github.com/JonathanBowker/trailblazer.advancedanalytica.co.uk.git
+    build_command: pnpm build
+    run_command: node ./dist/server/entry.mjs
+    envs:
+      - key: HOST
+        value: 0.0.0.0
+        scope: RUN_TIME

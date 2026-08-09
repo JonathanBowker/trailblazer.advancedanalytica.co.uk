@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 380" role="img" aria-labelledby="title desc">
+  <title id="title">Disney MagiKit Trailblazer</title>
+  <desc id="desc">Transparent Disney MagiKit Trailblazer masthead artwork.</desc>
+  <g text-anchor="middle">
+    <text
+      x="650"
+      y="56"
+      fill="#313131"
+      font-family="'Brush Script MT', 'Segoe Script', cursive"
+      font-size="56"
+      font-weight="700"
+      letter-spacing="-0.06em"
+    >Disney</text>
+    <text
+      x="650"
+      y="160"
+      fill="#ffffff"
+      font-family="'Arial Black', Impact, sans-serif"
+      font-size="104"
+      font-weight="900"
+      letter-spacing="-0.055em"
+    >MAGiKiT</text>
+    <text
+      x="650"
+      y="378"
+      fill="#ffffff"
+      font-family="'Arial Black', Impact, sans-serif"
+      font-size="136"
+      font-weight="900"
+      letter-spacing="-0.055em"
+    >TRAILBLAZER</text>
+  </g>
+</svg>

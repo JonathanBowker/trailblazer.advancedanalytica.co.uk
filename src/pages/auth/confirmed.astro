@@ -1,0 +1,52 @@
+---
+import '../../styles/global.css';
+import { getPortalAccess } from '../../lib/portalAccess';
+import { trailblazerFormPath } from '../../lib/site';
+import { createSupabaseServerClient, isSupabaseConfigured } from '../../lib/supabaseServer';
+
+export const prerender = false;
+
+if (!isSupabaseConfigured) {
+  return Astro.redirect('/login?error=config');
+}
+
+const supabase = createSupabaseServerClient({
+  request: Astro.request,
+  cookies: Astro.cookies,
+});
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const access = getPortalAccess(user);
+const isPageOnly = access.isPageViewerOnly;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{isPageOnly ? 'Page access confirmed' : 'Account confirmed'} | Trailblazer</title>
+    <meta name="robots" content="noindex,nofollow" />
+  </head>
+  <body>
+    <main style="min-height:100vh;display:grid;place-items:center;padding:24px;">
+      <section style="width:min(100%,680px);background:#fff;border:1px solid rgba(16,24,40,0.12);border-radius:28px;padding:32px;box-shadow:0 24px 80px rgba(15,23,42,0.12);">
+        <p style="margin:0;color:#14b8a6;font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;">{isPageOnly ? 'Page access confirmed' : 'Account confirmed'}</p>
+        <h1 style="margin:16px 0 0;font-size:clamp(2rem,4vw,3rem);line-height:1;">{isPageOnly ? 'Your Trailblazer form access is ready.' : 'Your access is ready.'}</h1>
+        <p style="margin:16px 0 0;color:#475467;line-height:1.7;">
+          You are signed in as <strong>{user.email}</strong>. Continue to the protected Trailblazer submission form when you are ready.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px;">
+          <a href={trailblazerFormPath} style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:14px 20px;background:#0f172a;color:#fff;font-weight:700;">Open Trailblazer</a>
+          <a href="/logout" style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:14px 20px;border:1px solid rgba(16,24,40,0.14);font-weight:700;">Sign out</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

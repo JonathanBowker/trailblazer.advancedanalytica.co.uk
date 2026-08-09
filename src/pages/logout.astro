@@ -1,0 +1,14 @@
+---
+import { createSupabaseServerClient, isSupabaseConfigured } from '../lib/supabaseServer';
+
+if (isSupabaseConfigured) {
+  const supabase = createSupabaseServerClient({
+    request: Astro.request,
+    cookies: Astro.cookies,
+  });
+
+  await supabase.auth.signOut();
+}
+
+return Astro.redirect('/login');
+---

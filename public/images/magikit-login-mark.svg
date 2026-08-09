@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 126" role="img" aria-labelledby="title desc">
+  <title id="title">Disney MagiKit Trailblazer</title>
+  <desc id="desc">Disney MagiKit Trailblazer login mark with red MagiKit lettering and black Trailblazer lettering.</desc>
+  <g text-anchor="middle">
+    <text
+      x="165"
+      y="23"
+      fill="#313131"
+      font-family="'Brush Script MT', 'Segoe Script', cursive"
+      font-size="25"
+      font-weight="700"
+      letter-spacing="-0.06em"
+    >Disney</text>
+    <text
+      x="165"
+      y="67"
+      fill="#ff1334"
+      font-family="'Arial Black', Impact, sans-serif"
+      font-size="43"
+      font-weight="900"
+      letter-spacing="-0.055em"
+    >MAGiKiT</text>
+    <text
+      x="165"
+      y="123"
+      fill="#111111"
+      font-family="'Arial Black', Impact, sans-serif"
+      font-size="44"
+      font-weight="900"
+      letter-spacing="-0.055em"
+    >TRAILBLAZER</text>
+  </g>
+</svg>

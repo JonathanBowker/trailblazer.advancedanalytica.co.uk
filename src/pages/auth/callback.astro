@@ -1,0 +1,52 @@
+---
+import type { EmailOtpType } from '@supabase/supabase-js';
+import { trailblazerFormPath, getPublicSiteOrigin } from '../../lib/site';
+import { createSupabaseServerClient, isSupabaseConfigured } from '../../lib/supabaseServer';
+
+if (!isSupabaseConfigured) {
+  return Astro.redirect('/login?error=config');
+}
+
+const supabase = createSupabaseServerClient({
+  request: Astro.request,
+  cookies: Astro.cookies,
+});
+
+const requestUrl = new URL(Astro.request.url);
+const authCode = requestUrl.searchParams.get('code');
+const flowId = requestUrl.searchParams.get('sb_flow_id');
+const tokenHash = requestUrl.searchParams.get('token_hash');
+const type = requestUrl.searchParams.get('type') as EmailOtpType | null;
+const newAccountTypes = new Set(['invite', 'signup']);
+
+let success = false;
+let callbackError = '';
+
+if (authCode) {
+  const { error } = await supabase.auth.exchangeCodeForSession(authCode, flowId ? { flowId } : undefined);
+  success = !error;
+  callbackError = error?.message || '';
+} else if (tokenHash && type) {
+  const { error } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type,
+  });
+  success = !error;
+  callbackError = error?.message || '';
+}
+
+if (success) {
+  if (type && newAccountTypes.has(type)) return Astro.redirect('/auth/confirmed');
+  return Astro.redirect(
+    requestUrl.searchParams.get('next')?.startsWith('/')
+      ? String(requestUrl.searchParams.get('next'))
+      : trailblazerFormPath,
+  );
+}
+
+const loginErrorUrl = new URL('/login', getPublicSiteOrigin(Astro.request));
+loginErrorUrl.searchParams.set('error', 'callback');
+if (callbackError) loginErrorUrl.searchParams.set('error_description', callbackError);
+
+return Astro.redirect(loginErrorUrl.toString());
+---
