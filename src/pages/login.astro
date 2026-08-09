@@ -6,8 +6,13 @@ import { prototypePilotPolicyUrl } from '../lib/prototypePilotPolicy';
 import { trailblazerFormPath } from '../lib/site';
 
 const user = Astro.locals.user;
+const requestedNextPath = Astro.url.searchParams.get('next') ?? trailblazerFormPath;
+const nextPath = requestedNextPath.startsWith('/') && !requestedNextPath.startsWith('//')
+  ? requestedNextPath
+  : trailblazerFormPath;
+
 if (user) {
-  return Astro.redirect(trailblazerFormPath);
+  return Astro.redirect(nextPath);
 }
 
 const error = Astro.url.searchParams.get('error') ?? '';
@@ -332,7 +337,7 @@ const message = getErrorMessage(error, errorDescription);
       </section>
     </main>
 
-    <script is:inline define:vars={{ nextPath: trailblazerFormPath }}>
+    <script is:inline define:vars={{ nextPath }}>
       const form = document.getElementById('embedded-form-access');
       const emailInput = document.getElementById('embedded-form-email');
       const submitButton = document.getElementById('embedded-form-submit');

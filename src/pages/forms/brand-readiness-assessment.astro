@@ -22,6 +22,11 @@ const previewMode = !user && previewRequested && isLocalPreviewRequest(Astro.req
 const canViewEmbed = Boolean(user) || previewMode;
 const displayUserEmail = user?.email ?? (previewMode ? 'local-preview@advancedanalytica.test' : '');
 const nextPath = `/forms/${service.slug}`;
+
+if (!canViewEmbed) {
+  return Astro.redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+}
+
 const useNativeDisneyCapture = true;
 const submitted = Astro.url.searchParams.get('submitted') === '1';
 const formError = Astro.url.searchParams.get('error') ?? '';
@@ -1186,107 +1191,6 @@ const formErrorMessage =
           </section>
         )}
       </main>
-    ) : (
-      <main class="access-shell">
-        <section class="access-card">
-          <div class="access-label">Magic link access</div>
-          <h1 class="access-title">{service.name}</h1>
-          <p class="access-copy">
-            Enter your work email and we’ll send a magic link that brings you straight back to this form.
-          </p>
-
-          <form id="embedded-form-access" class="access-form">
-            <label class="access-field">
-              Work email
-              <input
-                id="embedded-form-email"
-                type="email"
-                name="email"
-                autocomplete="email"
-                required
-                placeholder="name@company.com"
-                class="access-input"
-              />
-            </label>
-
-            <div class="access-actions">
-              <button
-                id="embedded-form-submit"
-                type="submit"
-                class="access-button"
-              >
-                Send magic link
-              </button>
-            </div>
-
-            <p id="embedded-form-status" class="access-status"></p>
-          </form>
-        </section>
-      </main>
-    )}
-
-    {!canViewEmbed ? (
-      <script is:inline define:vars={{ nextPath }}>
-        const form = document.getElementById('embedded-form-access');
-        const emailInput = document.getElementById('embedded-form-email');
-        const submitButton = document.getElementById('embedded-form-submit');
-        const status = document.getElementById('embedded-form-status');
-
-        if (
-          form instanceof HTMLFormElement &&
-          emailInput instanceof HTMLInputElement &&
-          submitButton instanceof HTMLButtonElement &&
-          status instanceof HTMLElement
-        ) {
-          const setStatus = (message, tone) => {
-            status.textContent = message;
-            status.classList.remove('is-success', 'is-error');
-            status.classList.add('is-visible', tone === 'success' ? 'is-success' : 'is-error');
-          };
-
-          form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const email = emailInput.value.trim();
-            if (!email) {
-              setStatus('Enter a work email address.', 'error');
-              return;
-            }
-
-            submitButton.disabled = true;
-            submitButton.textContent = 'Sending...';
-            status.classList.remove('is-visible', 'is-success', 'is-error');
-
-            try {
-              const response = await fetch('/auth/magic-link', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  email,
-                  nextUrl: nextPath,
-                }),
-              });
-
-              const payload = await response.json().catch(() => null);
-
-              if (!response.ok) {
-                throw new Error(payload?.error || 'Failed to send magic link.');
-              }
-
-              setStatus('Check your email for the sign-in link, then return here to open the form.', 'success');
-              form.reset();
-            } catch (error) {
-              const message = error instanceof Error ? error.message : 'Failed to send magic link.';
-              setStatus(message, 'error');
-            } finally {
-              submitButton.disabled = false;
-              submitButton.textContent = 'Send magic link';
-            }
-          });
-        }
-      </script>
     ) : null}
 
     {canViewEmbed && useNativeDisneyCapture && !submitted ? (
