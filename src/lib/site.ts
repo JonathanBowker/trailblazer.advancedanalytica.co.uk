@@ -3,7 +3,15 @@ import { isLocalHostname, normalizeHostname } from './hosts';
 export const trailblazerHost = 'trailblazer.advancedanalytica.co.uk';
 export const trailblazerFormPath = '/forms/brand-readiness-assessment';
 
-const trustedHosts = new Set([trailblazerHost, 'localhost', '127.0.0.1', '0.0.0.0', '::1']);
+const trustedHosts = new Set([
+  trailblazerHost,
+  'trailblazer.localhost',
+  'localhost',
+  '127.0.0.1',
+  '127.0.0.1.nip.io',
+  '0.0.0.0',
+  '::1',
+]);
 
 export function getConfiguredSiteOrigin() {
   return String(import.meta.env.PUBLIC_SITE_URL || `https://${trailblazerHost}`)

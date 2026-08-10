@@ -10,5 +10,10 @@ export default defineConfig({
   security: {
     checkOrigin: false,
   },
+  vite: {
+    server: {
+      allowedHosts: ['127.0.0.1.nip.io'],
+    },
+  },
   site: 'https://trailblazer.advancedanalytica.co.uk',
 });

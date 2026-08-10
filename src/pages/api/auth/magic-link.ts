@@ -9,7 +9,6 @@ import { createSupabaseServerClient, isSupabaseConfigured } from '../../../lib/s
 export const prerender = false;
 
 const mxLookupTimeoutMs = 5_000;
-const allowSelfSignup = true;
 
 const freeEmailDomains = new Set([
   'aol.com',
@@ -89,7 +88,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const body = await request.json();
     const email = String(body?.email || '').trim().toLowerCase();
     const nextUrl = String(body?.nextUrl || trailblazerFormPath).trim();
-    const shouldCreateUser = allowSelfSignup && Boolean(body?.shouldCreateUser);
     const consentAccepted = Boolean(body?.prototypePilotConsentAccepted);
     const submittedPolicyUrl = String(body?.prototypePilotPolicyUrl || '').trim();
     const submittedPolicyVersion = String(body?.prototypePilotPolicyVersion || '').trim();
@@ -115,7 +113,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       submittedPolicyVersion !== prototypePilotPolicyVersion
     ) {
       return new Response(
-        JSON.stringify({ error: 'Please acknowledge the prototype and pilot terms before we send the magic link.' }),
+        JSON.stringify({ error: 'Please acknowledge the prototype and pilot terms before we send the security code.' }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -135,7 +133,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       email,
       request,
       engagement,
-      flow: 'trailblazer-magic-link',
+      flow: 'trailblazer-secure-code',
       nextUrl,
     });
 
@@ -154,14 +152,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       email,
       options: {
         emailRedirectTo: redirectTo.toString(),
-        shouldCreateUser,
+        shouldCreateUser: false,
       },
     });
 
     if (error) {
       return new Response(
         JSON.stringify({
-          error: error.message || 'Failed to send magic link.',
+          error: error.message || 'Failed to send security code.',
           code: error.code || '',
         }),
         {
@@ -179,7 +177,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: getErrorMessage(error, 'Failed to send magic link.') }), {
+    return new Response(JSON.stringify({ error: getErrorMessage(error, 'Failed to send security code.') }), {
       status: 500,
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });

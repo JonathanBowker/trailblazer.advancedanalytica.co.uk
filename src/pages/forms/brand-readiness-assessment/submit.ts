@@ -12,6 +12,8 @@ const defaultInboxDir = '/tmp/trailblazer-submissions';
 const allowedExtensions = new Set(['pdf', 'docx', 'png', 'jpg', 'jpeg']);
 const allowedSubmitOrigins = new Set([
   'https://trailblazer.advancedanalytica.co.uk',
+  'http://trailblazer.localhost:4321',
+  'http://127.0.0.1.nip.io:5174',
   'http://localhost:4321',
   'http://127.0.0.1:4321',
 ]);

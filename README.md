@@ -21,7 +21,7 @@ This app is designed to use the same Supabase project as the main
 `advancedanalytica.co.uk` website, so user provisioning and role management can
 stay on the existing admin surface.
 
-`page_viewer` users can request magic links and access the protected Trailblazer
+`page_viewer` users can request security codes and access the protected Trailblazer
 form without gaining access to the main portal.
 
 ## Required Supabase redirect URLs

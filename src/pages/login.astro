@@ -21,13 +21,14 @@ const errorDescription = Astro.url.searchParams.get('error_description') ?? '';
 function getErrorMessage(code: string, description: string) {
   if (code === 'config') return 'Trailblazer authentication is not configured yet.';
   if (code === 'callback') {
-    return 'The sign-in link could not be completed. Request a fresh magic link and use the newest email only once.';
+    return 'The sign-in code could not be completed. Request a fresh security code and use the newest email only once.';
   }
   if (description) return description;
   return '';
 }
 
 const message = getErrorMessage(error, errorDescription);
+const securityCodeLength = 6;
 ---
 <!doctype html>
 <html lang="en">
@@ -171,6 +172,25 @@ const message = getErrorMessage(error, errorDescription);
         margin-top: 12px;
       }
 
+      .access-actions[hidden] {
+        display: none;
+      }
+
+      .access-step {
+        display: grid;
+        gap: 14px;
+      }
+
+      .access-step.is-code-entry {
+        justify-items: center;
+        gap: 12px;
+        text-align: center;
+      }
+
+      .access-step[hidden] {
+        display: none;
+      }
+
       .access-button {
         width: 100%;
         border-radius: 8px;
@@ -186,6 +206,115 @@ const message = getErrorMessage(error, errorDescription);
       .access-button:disabled {
         cursor: not-allowed;
         opacity: 0.65;
+      }
+
+      .access-secondary-button {
+        width: 100%;
+        border-radius: 8px;
+        border: 0;
+        background: transparent;
+        color: #6c56ff;
+        cursor: pointer;
+        padding: 0;
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+
+      .access-code-title {
+        margin: 0;
+        color: #1f2937;
+        font-size: 1.06rem;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .access-code-subtitle,
+      .access-code-email {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+
+      .access-code-email {
+        display: inline-flex;
+        max-width: 100%;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        overflow-wrap: anywhere;
+      }
+
+      .access-edit-email {
+        border: 0;
+        background: transparent;
+        color: #6c56ff;
+        cursor: pointer;
+        padding: 2px;
+        line-height: 1;
+      }
+
+      .access-edit-email svg {
+        width: 15px;
+        height: 15px;
+        display: block;
+      }
+
+      .access-code-grid {
+        display: grid;
+        width: 100%;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 7px;
+        margin-top: 20px;
+      }
+
+      .access-code-box {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border: 1px solid rgba(255, 19, 52, 0.52);
+        border-radius: 7px;
+        background: #fff;
+        color: #111827;
+        font: inherit;
+        font-size: 1.12rem;
+        font-weight: 800;
+        text-align: center;
+        outline: none;
+        box-shadow: none;
+      }
+
+      .access-code-box:focus {
+        border-color: #6c56ff;
+        box-shadow: 0 0 0 3px rgba(108, 86, 255, 0.18);
+      }
+
+      .access-resend-button {
+        border: 0;
+        background: transparent;
+        color: #b89aff;
+        cursor: pointer;
+        padding: 0;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .access-resend-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.72;
+      }
+
+      .access-code-footer {
+        width: calc(100% + 128px);
+        margin: 20px -64px -48px;
+        border-top: 1px solid rgba(17, 24, 39, 0.1);
+        background: #f9fafb;
+        padding: 16px 20px;
+        color: #6b7280;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-align: center;
       }
 
       .access-status {
@@ -208,9 +337,11 @@ const message = getErrorMessage(error, errorDescription);
       }
 
       .access-status.is-error {
-        border-color: #fecaca;
-        background: #fef2f2;
-        color: #991b1b;
+        border-color: transparent;
+        background: transparent;
+        color: #ff1334;
+        padding: 0;
+        text-align: center;
       }
 
       .access-footnote {
@@ -258,6 +389,11 @@ const message = getErrorMessage(error, errorDescription);
           min-height: auto;
           padding: 42px 28px 34px;
         }
+
+        .access-code-footer {
+          width: calc(100% + 56px);
+          margin: 20px -28px -34px;
+        }
       }
 
       @media (max-width: 560px) {
@@ -271,6 +407,11 @@ const message = getErrorMessage(error, errorDescription);
 
         .access-card {
           padding: 28px 18px 22px;
+        }
+
+        .access-code-footer {
+          width: calc(100% + 36px);
+          margin: 20px -18px -22px;
         }
 
         .visual-panel {
@@ -292,31 +433,75 @@ const message = getErrorMessage(error, errorDescription);
               height="197"
               alt="Disney MagiKit Trailblazer"
             />
-            <h1 class="access-title">Secure sign-in link</h1>
+            <h1 class="access-title">Secure sign-in code</h1>
 
             <form id="embedded-form-access" class="access-form">
-              <label class="access-field">
-                Email address:
-                <input
-                  id="embedded-form-email"
-                  type="email"
-                  name="email"
-                  autocomplete="email"
-                  required
-                  placeholder="name@company.com"
-                  class="access-input"
-                />
-              </label>
+              <div class="access-step" data-email-step>
+                <label class="access-field">
+                  Email address:
+                  <input
+                    id="embedded-form-email"
+                    type="email"
+                    name="email"
+                    autocomplete="email"
+                    required
+                    placeholder="name@company.com"
+                    class="access-input"
+                  />
+                </label>
 
-              <PrototypePilotConsent />
+                <PrototypePilotConsent />
+              </div>
 
-              <div class="access-actions">
+              <div class="access-step is-code-entry" data-code-step hidden>
+                <p class="access-code-title">Check your email</p>
+                <p class="access-code-subtitle">to continue to Trailblazer</p>
+                <p class="access-code-email">
+                  <span data-code-email></span>
+                  <button class="access-edit-email" type="button" data-use-another-email aria-label="Edit email address">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 20h4.6L19.2 9.4a2.1 2.1 0 0 0 0-3L17.6 4.8a2.1 2.1 0 0 0-3 0L4 15.4V20Zm2-2v-1.8l10-10 1.8 1.8-10 10H6Zm10.9-11.2.9-.9.3.3-.9.9-.3-.3Z" fill="currentColor"></path>
+                    </svg>
+                  </button>
+                </p>
+                <div class="access-code-grid" aria-label="Six-digit security code">
+                  {Array.from({ length: securityCodeLength }, (_, index) => (
+                    <input
+                      class="access-code-box"
+                      type="text"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
+                      maxlength="1"
+                      autocomplete={index === 0 ? 'one-time-code' : 'off'}
+                      aria-label={`Digit ${index + 1} of six-digit security code`}
+                      data-code-input
+                    />
+                  ))}
+                </div>
+                <button class="access-resend-button" type="button" data-resend-code>
+                  Didn't receive a code? Resend <span data-resend-countdown></span>
+                </button>
+                <div class="access-actions">
+                  <button
+                    id="embedded-form-submit"
+                    type="submit"
+                    class="access-button"
+                  >
+                    Continue <span aria-hidden="true">›</span>
+                  </button>
+                </div>
+                <div class="access-code-footer">
+                  Secured by Advanced Analytica
+                </div>
+              </div>
+
+              <div class="access-actions" data-email-actions>
                 <button
-                  id="embedded-form-submit"
+                  id="embedded-form-send"
                   type="submit"
                   class="access-button"
                 >
-                  Send secure link
+                  Send security code
                 </button>
               </div>
 
@@ -324,7 +509,7 @@ const message = getErrorMessage(error, errorDescription);
             </form>
 
             <p class="access-footnote">
-              Use the newest email link only once.
+              Use the newest security code only once.
             </p>
           </section>
 
@@ -339,21 +524,44 @@ const message = getErrorMessage(error, errorDescription);
       </section>
     </main>
 
-    <script is:inline define:vars={{ nextPath }}>
+    <script is:inline define:vars={{ nextPath, securityCodeLength }}>
       const form = document.getElementById('embedded-form-access');
       const emailInput = document.getElementById('embedded-form-email');
-      const submitButton = document.getElementById('embedded-form-submit');
+      const sendButton = document.getElementById('embedded-form-send');
+      const continueButton = document.getElementById('embedded-form-submit');
       const status = document.getElementById('embedded-form-status');
+      const emailStep = document.querySelector('[data-email-step]');
+      const codeStep = document.querySelector('[data-code-step]');
+      const emailActions = document.querySelector('[data-email-actions]');
+      const codeEmail = document.querySelector('[data-code-email]');
+      const codeInputs = Array.from(document.querySelectorAll('[data-code-input]'));
+      const useAnotherEmailButton = document.querySelector('[data-use-another-email]');
+      const resendButton = document.querySelector('[data-resend-code]');
+      const resendCountdown = document.querySelector('[data-resend-countdown]');
       const consentInput = document.querySelector('[data-prototype-pilot-consent]');
       const policyUrlInput = document.querySelector('[data-prototype-pilot-policy-url]');
       const policyVersionInput = document.querySelector('[data-prototype-pilot-policy-version]');
       const engagementInput = document.querySelector('[data-prototype-pilot-engagement]');
+      const resendSeconds = 60;
+      let resendTimer = 0;
+      let remainingResendSeconds = resendSeconds;
+      let pendingEmail = '';
+      let isCodeStep = false;
 
       if (
         form instanceof HTMLFormElement &&
         emailInput instanceof HTMLInputElement &&
-        submitButton instanceof HTMLButtonElement &&
+        sendButton instanceof HTMLButtonElement &&
+        continueButton instanceof HTMLButtonElement &&
         status instanceof HTMLElement &&
+        emailStep instanceof HTMLElement &&
+        codeStep instanceof HTMLElement &&
+        emailActions instanceof HTMLElement &&
+        codeEmail instanceof HTMLElement &&
+        codeInputs.every((input) => input instanceof HTMLInputElement) &&
+        useAnotherEmailButton instanceof HTMLButtonElement &&
+        resendButton instanceof HTMLButtonElement &&
+        resendCountdown instanceof HTMLElement &&
         consentInput instanceof HTMLInputElement &&
         policyUrlInput instanceof HTMLInputElement &&
         policyVersionInput instanceof HTMLInputElement &&
@@ -365,55 +573,185 @@ const message = getErrorMessage(error, errorDescription);
           status.classList.add('is-visible', tone === 'success' ? 'is-success' : 'is-error');
         };
 
+        const clearStatus = () => {
+          status.classList.remove('is-visible', 'is-success', 'is-error');
+          status.textContent = '';
+        };
+
+        const getCode = () => codeInputs.map((input) => input.value).join('');
+
+        const fillCode = (value) => {
+          const digits = value.replace(/\D/g, '').slice(0, securityCodeLength);
+          codeInputs.forEach((input, index) => {
+            input.value = digits[index] || '';
+          });
+          const nextIndex = Math.min(digits.length, securityCodeLength - 1);
+          codeInputs[nextIndex]?.focus();
+        };
+
+        const updateResendLabel = () => {
+          resendCountdown.textContent = remainingResendSeconds > 0 ? `(${remainingResendSeconds})` : '';
+          resendButton.disabled = remainingResendSeconds > 0;
+        };
+
+        const startResendTimer = () => {
+          window.clearInterval(resendTimer);
+          remainingResendSeconds = resendSeconds;
+          updateResendLabel();
+          resendTimer = window.setInterval(() => {
+            remainingResendSeconds = Math.max(0, remainingResendSeconds - 1);
+            updateResendLabel();
+            if (remainingResendSeconds === 0) window.clearInterval(resendTimer);
+          }, 1000);
+        };
+
+        const setStep = (step) => {
+          isCodeStep = step === 'code';
+          emailStep.hidden = isCodeStep;
+          codeStep.hidden = !isCodeStep;
+          emailActions.hidden = isCodeStep;
+          if (isCodeStep) {
+            codeEmail.textContent = pendingEmail;
+            codeInputs.forEach((input) => {
+              input.required = true;
+              input.value = '';
+            });
+            codeInputs[0]?.focus();
+            startResendTimer();
+          } else {
+            codeInputs.forEach((input) => {
+              input.required = false;
+              input.value = '';
+            });
+            window.clearInterval(resendTimer);
+            pendingEmail = '';
+            emailInput.focus();
+          }
+        };
+
+        const returnToEmailStep = () => {
+          clearStatus();
+          setStep('email');
+        };
+
+        useAnotherEmailButton.addEventListener('click', returnToEmailStep);
+
+        codeInputs.forEach((input, index) => {
+          input.addEventListener('input', () => {
+            const digits = input.value.replace(/\D/g, '');
+            if (digits.length > 1) {
+              fillCode(digits);
+              return;
+            }
+
+            input.value = digits;
+            if (digits && index < codeInputs.length - 1) codeInputs[index + 1]?.focus();
+          });
+
+          input.addEventListener('keydown', (event) => {
+            if (event.key === 'Backspace' && !input.value && index > 0) codeInputs[index - 1]?.focus();
+          });
+
+          input.addEventListener('paste', (event) => {
+            event.preventDefault();
+            fillCode(event.clipboardData?.getData('text') || '');
+          });
+        });
+
+        const sendSecurityCode = async (email) => {
+          const response = await fetch('/auth/secure-code', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email,
+              nextUrl: nextPath,
+              prototypePilotConsentAccepted: consentInput.checked,
+              prototypePilotPolicyUrl: policyUrlInput.value,
+              prototypePilotPolicyVersion: policyVersionInput.value,
+              prototypePilotEngagement: engagementInput.value,
+            }),
+          });
+
+          const payload = await response.json().catch(() => null);
+          if (!response.ok) throw new Error(payload?.error || 'Failed to send security code.');
+          return payload;
+        };
+
+        resendButton.addEventListener('click', async () => {
+          if (!pendingEmail || remainingResendSeconds > 0) return;
+          resendButton.disabled = true;
+          try {
+            await sendSecurityCode(pendingEmail);
+            setStatus('We sent a fresh security code.', 'success');
+            startResendTimer();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to send security code.';
+            setStatus(message, 'error');
+            updateResendLabel();
+          }
+        });
+
         form.addEventListener('submit', async (event) => {
           event.preventDefault();
 
           const email = emailInput.value.trim();
-          if (!email) {
-            setStatus('Enter a work email address.', 'error');
-            return;
+
+          if (!isCodeStep) {
+            if (!email) {
+              setStatus('Enter a work email address.', 'error');
+              return;
+            }
+
+            if (!consentInput.checked) {
+              setStatus('Please acknowledge the prototype and pilot terms before we send the security code.', 'error');
+              consentInput.focus();
+              return;
+            }
           }
 
-          if (!consentInput.checked) {
-            setStatus('Please acknowledge the prototype and pilot terms before we send the magic link.', 'error');
-            consentInput.focus();
-            return;
-          }
-
-          submitButton.disabled = true;
-          submitButton.textContent = 'Sending...';
-          status.classList.remove('is-visible', 'is-success', 'is-error');
+          sendButton.disabled = true;
+          continueButton.disabled = true;
+          sendButton.textContent = 'Sending...';
+          continueButton.textContent = 'Working...';
+          clearStatus();
 
           try {
-            const response = await fetch('/auth/magic-link', {
+            const response = isCodeStep ? await fetch('/auth/verify-code', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                email,
+                email: pendingEmail,
+                code: getCode(),
                 nextUrl: nextPath,
-                prototypePilotConsentAccepted: consentInput.checked,
-                prototypePilotPolicyUrl: policyUrlInput.value,
-                prototypePilotPolicyVersion: policyVersionInput.value,
-                prototypePilotEngagement: engagementInput.value,
               }),
-            });
+            }) : null;
 
-            const payload = await response.json().catch(() => null);
-
-            if (!response.ok) {
-              throw new Error(payload?.error || 'Failed to send magic link.');
+            if (!isCodeStep) {
+              await sendSecurityCode(email);
+              pendingEmail = email.toLowerCase();
+              setStep('code');
+              return;
             }
 
-            setStatus('Check your email for the sign-in link, then return here to open the form.', 'success');
-            form.reset();
+            const payload = await response?.json().catch(() => null);
+
+            if (!response?.ok) {
+              throw new Error(payload?.error || 'Failed to verify security code.');
+            }
+
+            window.location.assign(payload?.nextUrl || nextPath);
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to send magic link.';
+            const message = error instanceof Error ? error.message : 'Failed to send security code.';
             setStatus(message, 'error');
           } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Send secure link';
+            sendButton.disabled = false;
+            continueButton.disabled = false;
+            sendButton.textContent = 'Send security code';
+            continueButton.innerHTML = 'Continue <span aria-hidden="true">›</span>';
           }
         });
       }

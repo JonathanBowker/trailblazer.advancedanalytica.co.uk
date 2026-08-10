@@ -25,3 +25,6 @@ services:
       - key: HOST
         value: 0.0.0.0
         scope: RUN_TIME
+      - key: NODE_OPTIONS
+        value: --max-http-header-size=131072
+        scope: RUN_TIME

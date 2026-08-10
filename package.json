@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.23.0",
   "scripts": {
     "dev": "astro dev",
+    "dev:otp": "NODE_OPTIONS=--max-http-header-size=131072 astro dev --host 127.0.0.1 --port 5175",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
