@@ -70,6 +70,17 @@ function safeFilename(value: string) {
   return cleaned || 'creative-upload';
 }
 
+function safeAccountSlug(value: string) {
+  const cleaned = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._=-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return cleaned || 'unknown-account';
+}
+
 function extensionFor(filename: string) {
   return filename.split('.').pop()?.toLowerCase() || '';
 }
@@ -181,6 +192,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   const manifest = {
     manifest_id: submissionId,
+    account_slug: safeAccountSlug(company),
     partner: {
       name: company,
       contact: `${name} <${email}>`,
