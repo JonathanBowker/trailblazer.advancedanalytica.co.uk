@@ -316,7 +316,7 @@ const message = getErrorMessage(error, errorDescription);
                   type="submit"
                   class="access-button"
                 >
-                  Send magic link
+                  Send secure link
                 </button>
               </div>
 
@@ -413,7 +413,7 @@ const message = getErrorMessage(error, errorDescription);
             setStatus(message, 'error');
           } finally {
             submitButton.disabled = false;
-            submitButton.textContent = 'Send magic link';
+            submitButton.textContent = 'Send secure link';
           }
         });
       }
