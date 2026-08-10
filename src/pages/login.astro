@@ -310,11 +310,20 @@ const securityCodeLength = 6;
         margin: 20px -64px -48px;
         border-top: 1px solid rgba(17, 24, 39, 0.1);
         background: #f9fafb;
-        padding: 16px 20px;
+        padding: 14px 20px 16px;
         color: #6b7280;
         font-size: 0.76rem;
         font-weight: 700;
         text-align: center;
+        display: grid;
+        gap: 5px;
+        line-height: 1.35;
+      }
+
+      .access-code-footer small {
+        color: #6b7280;
+        font-size: 0.72rem;
+        font-weight: 400;
       }
 
       .access-status {
@@ -352,6 +361,10 @@ const securityCodeLength = 6;
         color: #6b7280;
         line-height: 1.45;
         text-align: center;
+      }
+
+      .access-footnote[hidden] {
+        display: none;
       }
 
       .access-footnote strong {
@@ -491,7 +504,8 @@ const securityCodeLength = 6;
                   </button>
                 </div>
                 <div class="access-code-footer">
-                  Secured by Advanced Analytica
+                  <span>Secured by Advanced Analytica</span>
+                  <small>Use the newest security code only once.</small>
                 </div>
               </div>
 
@@ -508,7 +522,7 @@ const securityCodeLength = 6;
               <p id="embedded-form-status" class={`access-status${message ? ' is-visible is-error' : ''}`}>{message}</p>
             </form>
 
-            <p class="access-footnote">
+            <p class="access-footnote" data-access-footnote>
               Use the newest security code only once.
             </p>
           </section>
@@ -542,6 +556,7 @@ const securityCodeLength = 6;
       const policyUrlInput = document.querySelector('[data-prototype-pilot-policy-url]');
       const policyVersionInput = document.querySelector('[data-prototype-pilot-policy-version]');
       const engagementInput = document.querySelector('[data-prototype-pilot-engagement]');
+      const accessFootnote = document.querySelector('[data-access-footnote]');
       const resendSeconds = 60;
       let resendTimer = 0;
       let remainingResendSeconds = resendSeconds;
@@ -565,7 +580,8 @@ const securityCodeLength = 6;
         consentInput instanceof HTMLInputElement &&
         policyUrlInput instanceof HTMLInputElement &&
         policyVersionInput instanceof HTMLInputElement &&
-        engagementInput instanceof HTMLInputElement
+        engagementInput instanceof HTMLInputElement &&
+        accessFootnote instanceof HTMLElement
       ) {
         const setStatus = (message, tone) => {
           status.textContent = message;
@@ -610,6 +626,7 @@ const securityCodeLength = 6;
           emailStep.hidden = isCodeStep;
           codeStep.hidden = !isCodeStep;
           emailActions.hidden = isCodeStep;
+          accessFootnote.hidden = isCodeStep;
           if (isCodeStep) {
             codeEmail.textContent = pendingEmail;
             codeInputs.forEach((input) => {
