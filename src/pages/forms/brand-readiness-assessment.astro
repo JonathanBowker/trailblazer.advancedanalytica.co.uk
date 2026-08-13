@@ -322,6 +322,25 @@ const formErrorMessage =
         overflow: hidden;
       }
 
+      .native-header {
+        padding: clamp(18px, 4vw, 34px);
+        background: #ed1b2f;
+        color: #fff;
+      }
+
+      .magikit-heading {
+        display: grid;
+        justify-items: center;
+        gap: clamp(16px, 3vw, 26px);
+      }
+
+      .magikit-header-image {
+        width: min(100%, 675px);
+        height: auto;
+        display: block;
+        border-radius: 10px;
+      }
+
       .native-label {
         color: #ed1b2f;
         font-size: 0.72rem;
@@ -336,6 +355,19 @@ const formErrorMessage =
         font-size: clamp(2rem, 5.4vw, 3.8rem);
         line-height: 1;
         letter-spacing: -0.045em;
+      }
+
+      .native-copy {
+        max-width: 58ch;
+        margin: 0 auto;
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 1rem;
+        line-height: 1.75;
+        text-align: center;
+      }
+
+      .magikit-heading + .native-copy {
+        margin-top: clamp(14px, 3vw, 26px);
       }
 
       .native-form,
@@ -950,6 +982,25 @@ const formErrorMessage =
                 </div>
               ) : (
                 <>
+                  <header class="native-header">
+                    <div class="magikit-heading">
+                      <img
+                        class="magikit-header-image"
+                        src="/images/magikit-trailblazer-banner.svg"
+                        width="653"
+                        height="197"
+                        alt="Disney MagiKit Trailblazer"
+                        loading="eager"
+                      />
+                    </div>
+                    <p class="native-copy">
+                      Welcome to Trailblazer, our AI-powered Creative Approval agent.
+                    </p>
+                    <p class="native-copy">
+                      To get started, simply complete the form below to submit your marketing asset and we'll be in touch.
+                    </p>
+                  </header>
+
                   <form class="native-form" action={`${nextPath}/submit`} method="post" enctype="multipart/form-data" data-native-form>
                     <input type="hidden" name="name" value={displayUserName} />
                     <input type="hidden" name="email" value={displayUserEmail} />
