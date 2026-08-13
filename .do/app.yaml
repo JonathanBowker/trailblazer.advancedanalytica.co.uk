@@ -28,3 +28,36 @@ services:
       - key: NODE_OPTIONS
         value: --max-http-header-size=131072
         scope: RUN_TIME
+      - key: PREFECT_TRIGGER_API_URL
+        value: http://188.166.152.62:8080
+        scope: RUN_TIME
+      - key: DISNEY_SUBMITTED_ARTIFACTS_BUCKET
+        value: disney-submitted-artifacts
+        scope: RUN_TIME
+      - key: DISNEY_SUBMITTED_ARTIFACTS_ENDPOINT_URL
+        value: https://lon1.digitaloceanspaces.com
+        scope: RUN_TIME
+      - key: DISNEY_SUBMITTED_ARTIFACTS_REGION
+        value: lon1
+        scope: RUN_TIME
+      - key: DISNEY_SUBMITTED_ARTIFACTS_KEY_PREFIX
+        value: submissions
+        scope: RUN_TIME
+      - key: PREFECT_DOCUMENT_SOURCE_BLOCK_NAME
+        value: aa-disney-submitted-artifacts-do
+        scope: RUN_TIME
+      - key: TRAILBLAZER_RECEIVED_EMAIL_ENABLED
+        value: "true"
+        scope: RUN_TIME
+      - key: TRAILBLAZER_RECEIVED_EMAIL_RECIPIENTS
+        value: jonathan@advancedanalytica.co.uk,claire.wadham@advancedanalytica.co.uk
+        scope: RUN_TIME
+      - key: TRAILBLAZER_RECEIVED_EMAIL_FROM
+        value: results@advancedanalytica.co.uk
+        scope: RUN_TIME
+      - key: TRAILBLAZER_RECEIVED_EMAIL_FROM_NAME
+        value: Advanced Analytica
+        scope: RUN_TIME
+      - key: TRAILBLAZER_RECEIVED_EMAIL_AWS_REGION
+        value: eu-west-2
+        scope: RUN_TIME

@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { sendSubmissionReceivedNotification } from './submissionNotification';
 
 type StageStatus = 'completed' | 'skipped' | 'failed';
 
@@ -54,9 +56,18 @@ type OrchestrationParams = {
   getEnvValue: (name: string) => string;
 };
 
+type SubmittedArtifactUpload = {
+  bucket: string;
+  key: string;
+  uri: string;
+  sourceBlockName: string;
+};
+
 const defaultTimeoutMs = 60_000;
 const defaultMaxPdfPagesForMatching = 12;
 const defaultMaxPdfImagesForMatching = 24;
+const defaultDocumentSourceBlockName = 'aa-disney-submitted-artifacts-do';
+const defaultSubmittedArtifactsKeyPrefix = 'submissions';
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const jpegSofMarkers = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
 
@@ -758,6 +769,15 @@ async function postMatcherJson(
 }
 
 async function runCompliancePipeline(params: OrchestrationParams): Promise<OrchestrationStage> {
+  const prefectEndpoint = endpointFromEnv(
+    'PREFECT_DISNEY_COMPLIANCE_RUN_URL',
+    'PREFECT_TRIGGER_API_URL',
+    '/flows/disney/brand-compliance-pipeline/run',
+    params.getEnvValue,
+  );
+
+  if (prefectEndpoint) return runPrefectCompliancePipeline(params, prefectEndpoint);
+
   const endpoint = endpointFromEnv(
     'DISNEY_COMPLIANCE_AUDIT_URL',
     'DISNEY_COMPLIANCE_API_URL',
@@ -817,6 +837,194 @@ async function runCompliancePipeline(params: OrchestrationParams): Promise<Orche
   }
 }
 
+async function runPrefectCompliancePipeline(
+  params: OrchestrationParams,
+  endpoint: string,
+): Promise<OrchestrationStage> {
+  const apiKey = params.getEnvValue('PREFECT_TRIGGER_API_KEY') || params.getEnvValue('AA_TRIGGER_API_KEY');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) headers['X-API-Key'] = apiKey;
+
+  try {
+    const buffer = await readFile(params.storedFilePath);
+    const uploadedDocument = await uploadSubmittedArtifactForPrefect(params, buffer);
+    const payload =
+      uploadedDocument
+        ? {
+            manifest: params.manifest,
+            submission: params.submission,
+            document_storage_uri: uploadedDocument.uri,
+            document_source_block_name: uploadedDocument.sourceBlockName,
+            document_name: params.originalFilename,
+            content_type: params.mediaType,
+            stage_submission_assets: true,
+            store_original: true,
+            include_image_matcher: true,
+            generate_annotated_pdf: true,
+            generate_review_export: true,
+            generate_image_assessment_export: true,
+            publish_review_export: false,
+            deliver_result_email: true,
+          }
+        : buildInlinePrefectPayload(params, buffer);
+
+    if (!payload) {
+      return {
+        status: 'failed',
+        endpoint,
+        message:
+          'Prefect trigger requires DigitalOcean Spaces upload settings for files over the Prefect parameter size limit.',
+        evidence: {
+          required_env: [
+            'DISNEY_SUBMITTED_ARTIFACTS_BUCKET',
+            'DISNEY_SUBMITTED_ARTIFACTS_ENDPOINT_URL',
+            'DISNEY_SUBMITTED_ARTIFACTS_ACCESS_KEY_ID',
+            'DISNEY_SUBMITTED_ARTIFACTS_SECRET_ACCESS_KEY',
+          ],
+          file_size_bytes: buffer.length,
+        },
+      };
+    }
+
+    const response = await fetchWithTimeout(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    const evidence = await readJsonResponse(response);
+
+    if (!response.ok) {
+      return {
+        status: 'failed',
+        endpoint,
+        message: `Prefect trigger API returned HTTP ${response.status}.`,
+        evidence,
+      };
+    }
+
+    return {
+      status: 'completed',
+      endpoint,
+      message: uploadedDocument
+        ? 'Uploaded creative to submitted-artifacts storage and queued Disney compliance analysis in Prefect.'
+        : 'Queued Disney compliance analysis in Prefect.',
+      evidence: uploadedDocument ? { ...evidence, submitted_artifact: uploadedDocument } : evidence,
+    };
+  } catch (error) {
+    return {
+      status: 'failed',
+      endpoint,
+      message: error instanceof Error ? error.message : 'Prefect trigger request failed.',
+    };
+  }
+}
+
+function buildInlinePrefectPayload(params: OrchestrationParams, buffer: Buffer) {
+  const documentBase64 = buffer.toString('base64');
+  if (Buffer.byteLength(documentBase64, 'utf8') > 400_000) return null;
+
+  return {
+    manifest: params.manifest,
+    submission: params.submission,
+    document_base64: documentBase64,
+    document_name: params.originalFilename,
+    content_type: params.mediaType,
+    stage_submission_assets: true,
+    store_original: true,
+    include_image_matcher: true,
+    generate_annotated_pdf: true,
+    generate_review_export: true,
+    generate_image_assessment_export: true,
+    publish_review_export: false,
+    deliver_result_email: true,
+  };
+}
+
+async function uploadSubmittedArtifactForPrefect(
+  params: OrchestrationParams,
+  buffer: Buffer,
+): Promise<SubmittedArtifactUpload | null> {
+  const bucket = params.getEnvValue('DISNEY_SUBMITTED_ARTIFACTS_BUCKET');
+  const endpoint = params.getEnvValue('DISNEY_SUBMITTED_ARTIFACTS_ENDPOINT_URL');
+  const accessKeyId = params.getEnvValue('DISNEY_SUBMITTED_ARTIFACTS_ACCESS_KEY_ID');
+  const secretAccessKey = params.getEnvValue('DISNEY_SUBMITTED_ARTIFACTS_SECRET_ACCESS_KEY');
+  if (!bucket || !endpoint || !accessKeyId || !secretAccessKey) return null;
+
+  const region = params.getEnvValue('DISNEY_SUBMITTED_ARTIFACTS_REGION') || 'lon1';
+  const keyPrefix = cleanS3KeyPrefix(
+    params.getEnvValue('DISNEY_SUBMITTED_ARTIFACTS_KEY_PREFIX') || defaultSubmittedArtifactsKeyPrefix,
+  );
+  const sourceBlockName =
+    params.getEnvValue('PREFECT_DOCUMENT_SOURCE_BLOCK_NAME') ||
+    params.getEnvValue('DISNEY_DOCUMENT_SOURCE_BLOCK_NAME') ||
+    defaultDocumentSourceBlockName;
+  const accountSlug = safeS3KeySegment(
+    typeof params.manifest.account_slug === 'string' ? params.manifest.account_slug : '',
+  );
+  const datePart = new Date().toISOString().slice(0, 10);
+  const key = [
+    keyPrefix,
+    accountSlug || 'unknown-account',
+    datePart,
+    safeS3KeySegment(params.submissionId),
+    'original',
+    safeS3KeySegment(params.storedFilename),
+  ]
+    .filter(Boolean)
+    .join('/');
+
+  const client = new S3Client({
+    region,
+    endpoint,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: params.mediaType || 'application/octet-stream',
+      Metadata: {
+        submission_id: params.submissionId,
+        original_filename: params.originalFilename,
+        source_sha256: sha256(buffer),
+      },
+    }),
+  );
+
+  return {
+    bucket,
+    key,
+    uri: `s3://${bucket}/${key}`,
+    sourceBlockName,
+  };
+}
+
+function cleanS3KeyPrefix(value: string) {
+  return value
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .map(safeS3KeySegment)
+    .filter(Boolean)
+    .join('/');
+}
+
+function safeS3KeySegment(value: string) {
+  return String(value || '')
+    .trim()
+    .replace(/[/\\?%*:|"<>]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 function imageMatcherFromCompliance(compliance: OrchestrationStage): OrchestrationStage {
   if (compliance.status !== 'completed') {
     return {
@@ -826,6 +1034,18 @@ function imageMatcherFromCompliance(compliance: OrchestrationStage): Orchestrati
   }
 
   const evidence = compliance.evidence as any;
+  if (evidence?.flow_run_id) {
+    return {
+      status: 'skipped',
+      endpoint: compliance.endpoint,
+      message: 'Handled inside the queued Prefect Disney compliance flow.',
+      evidence: {
+        flow_run_id: evidence.flow_run_id,
+        status_url: evidence.status_url,
+      },
+    };
+  }
+
   const matcher = evidence?.image_matcher;
   const status = String(matcher?.status || '').toLowerCase();
   if (status === 'completed' || status === 'skipped' || status === 'failed') {
@@ -893,6 +1113,17 @@ export async function orchestrateDisneySubmission(params: OrchestrationParams) {
     runCompliancePipeline(params),
     runLegacyIngest(params),
   ]);
+  const complianceEvidence = compliancePipeline.evidence as any;
+  if (compliancePipeline.status === 'completed' && complianceEvidence?.submitted_artifact) {
+    complianceEvidence.received_notification = await sendSubmissionReceivedNotification({
+      getEnvValue: params.getEnvValue,
+      manifest: params.manifest,
+      submission: params.submission,
+      submittedArtifact: complianceEvidence.submitted_artifact,
+      flowRunId: complianceEvidence.flow_run_id,
+      statusUrl: complianceEvidence.status_url,
+    });
+  }
   const imageMatcher = imageMatcherFromCompliance(compliancePipeline);
 
   const resultWithoutMessage = {

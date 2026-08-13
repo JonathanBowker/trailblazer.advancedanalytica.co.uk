@@ -53,7 +53,6 @@ const displayUserName =
 const displayUserCompany =
   firstProfileValue('company', 'company_name', 'organisation', 'organization') ||
   (previewMode ? 'Advanced Analytica Preview' : companyFromEmail(displayUserEmail));
-const signedInEmail = displayUserEmail;
 const signedInCompany = displayUserCompany;
 const creativeWorkTypes = [
   ['social_media_post', 'Social media post'],
@@ -323,25 +322,6 @@ const formErrorMessage =
         overflow: hidden;
       }
 
-      .native-header {
-        padding: clamp(18px, 4vw, 34px);
-        background: #ed1b2f;
-        color: #fff;
-      }
-
-      .magikit-heading {
-        display: grid;
-        justify-items: center;
-        gap: clamp(16px, 3vw, 26px);
-      }
-
-      .magikit-header-image {
-        width: min(100%, 675px);
-        height: auto;
-        display: block;
-        border-radius: 10px;
-      }
-
       .native-label {
         color: #ed1b2f;
         font-size: 0.72rem;
@@ -356,19 +336,6 @@ const formErrorMessage =
         font-size: clamp(2rem, 5.4vw, 3.8rem);
         line-height: 1;
         letter-spacing: -0.045em;
-      }
-
-      .native-copy {
-        max-width: 58ch;
-        margin: 0 auto;
-        color: rgba(255, 255, 255, 0.84);
-        font-size: 1rem;
-        line-height: 1.75;
-        text-align: center;
-      }
-
-      .magikit-heading + .native-copy {
-        margin-top: clamp(14px, 3vw, 26px);
       }
 
       .native-form,
@@ -983,25 +950,6 @@ const formErrorMessage =
                 </div>
               ) : (
                 <>
-                  <header class="native-header">
-                    <div class="magikit-heading">
-                      <img
-                        class="magikit-header-image"
-                        src="/images/magikit-trailblazer-banner.svg"
-                        width="653"
-                        height="197"
-                        alt="Disney MagiKit Trailblazer"
-                        loading="eager"
-                      />
-                    </div>
-                    <p class="native-copy">
-                      Welcome to Trailblazer, our AI-powered Creative Approval agent.
-                    </p>
-                    <p class="native-copy">
-                      To get started, simply complete the form below to submit your marketing asset and we'll be in touch.
-                    </p>
-                  </header>
-
                   <form class="native-form" action={`${nextPath}/submit`} method="post" enctype="multipart/form-data" data-native-form>
                     <input type="hidden" name="name" value={displayUserName} />
                     <input type="hidden" name="email" value={displayUserEmail} />
@@ -1222,7 +1170,7 @@ const formErrorMessage =
           const reviewFile = document.querySelector('[data-review-file]');
           let imagePreviewUrl = '';
           let previewToken = 0;
-          let pdfJsPromise;
+          let pdfJsPromise: Promise<any> | undefined;
           let reviewReady = false;
           let reviewTimer = 0;
           let isSubmitting = false;
@@ -1230,7 +1178,7 @@ const formErrorMessage =
           const PDF_THUMBNAIL_MAX_BYTES = 10 * 1024 * 1024;
           const PDF_THUMBNAIL_TIMEOUT_MS = 12000;
 
-          const formatFileSize = (bytes) => {
+          const formatFileSize = (bytes: number) => {
             if (!Number.isFinite(bytes) || bytes <= 0) return '';
             const units = ['B', 'KB', 'MB', 'GB'];
             const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
@@ -1250,11 +1198,11 @@ const formErrorMessage =
             fileWarning.hidden = !message;
           };
 
-          const setReviewText = (node, value) => {
+          const setReviewText = (node: Element | null, value: string) => {
             if (node instanceof HTMLElement) node.textContent = value;
           };
 
-          const getFieldValue = (name) => {
+          const getFieldValue = (name: string) => {
             if (!(form instanceof HTMLFormElement)) return '';
             const field = form.elements.namedItem(name);
             if (
@@ -1268,14 +1216,14 @@ const formErrorMessage =
             return '';
           };
 
-          const getSelectedOptionText = (name) => {
+          const getSelectedOptionText = (name: string) => {
             if (!(form instanceof HTMLFormElement)) return '';
             const field = form.elements.namedItem(name);
             if (!(field instanceof HTMLSelectElement)) return '';
             return field.selectedOptions[0]?.textContent?.trim() || field.value;
           };
 
-          const formatDisplayDate = (value) => {
+          const formatDisplayDate = (value: string) => {
             if (!value) return '';
             const date = new Date(`${value}T00:00:00`);
             if (Number.isNaN(date.valueOf())) return value;
@@ -1350,7 +1298,7 @@ const formErrorMessage =
 
           const showProcessing = () => {
             isSubmitting = true;
-            form.setAttribute('aria-busy', 'true');
+            if (form instanceof HTMLFormElement) form.setAttribute('aria-busy', 'true');
             if (reviewLoader instanceof HTMLElement) reviewLoader.hidden = true;
             if (processingPanel instanceof HTMLElement) {
               processingPanel.hidden = false;
@@ -1364,10 +1312,10 @@ const formErrorMessage =
             if (editReviewButton instanceof HTMLButtonElement) editReviewButton.disabled = true;
           };
 
-          const withTimeout = (promise, timeoutMs) =>
+          const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> =>
             Promise.race([
               promise,
-              new Promise((_, reject) => {
+              new Promise<never>((_, reject) => {
                 window.setTimeout(() => reject(new Error('PDF thumbnail timed out.')), timeoutMs);
               }),
             ]);
@@ -1386,10 +1334,10 @@ const formErrorMessage =
             return pdfJsPromise;
           };
 
-          const renderPdfThumbnail = async (file, token) => {
+          const renderPdfThumbnail = async (file: File, token: number): Promise<string | null> => {
             const pdfjsLib = await getPdfJs();
             const data = await file.arrayBuffer();
-            let pdf;
+            let pdf: any;
 
             try {
               pdf = await pdfjsLib.getDocument({ data }).promise;
@@ -1411,7 +1359,7 @@ const formErrorMessage =
 
               if (token !== previewToken) return null;
 
-              return new Promise((resolve) => {
+              return new Promise<string | null>((resolve) => {
                 canvas.toBlob((blob) => {
                   resolve(blob ? URL.createObjectURL(blob) : null);
                 }, 'image/png');
@@ -1439,7 +1387,7 @@ const formErrorMessage =
             if (fileDetail) fileDetail.textContent = '';
           };
 
-          const setPreview = async (file) => {
+          const setPreview = async (file: File | null | undefined) => {
             const token = previewToken + 1;
             previewToken = token;
             resetReview();
@@ -1464,7 +1412,11 @@ const formErrorMessage =
               thumb.replaceChildren('FILE');
               thumb.className = 'native-file-thumb';
 
-              const showThumbnailImage = (url, mode, fallbackLabel) => {
+              const showThumbnailImage = (
+                url: string,
+                mode: 'image' | 'document',
+                fallbackLabel: string,
+              ) => {
                 const image = document.createElement('img');
                 image.alt = '';
                 image.decoding = 'async';

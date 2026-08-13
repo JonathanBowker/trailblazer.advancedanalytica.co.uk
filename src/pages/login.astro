@@ -79,9 +79,9 @@ const securityCodeLength = 6;
       }
 
       .access-frame {
-        width: min(100%, 1000px);
+        width: min(100%, 460px);
         display: grid;
-        grid-template-columns: minmax(360px, 430px) minmax(500px, 570px);
+        grid-template-columns: 1fr;
         border-radius: 14px;
         overflow: hidden;
         background: #ffffff;
@@ -98,35 +98,23 @@ const securityCodeLength = 6;
         min-height: 552px;
       }
 
-      .access-mark {
-        width: 330px;
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 0 auto 42px;
-      }
-
-      .visual-panel {
-        position: relative;
-        min-height: 552px;
-        background:
-          linear-gradient(180deg, rgba(255, 19, 52, 0.1), rgba(15, 23, 42, 0.08)),
-          url("/images/reg-bg-04.webp") center / cover no-repeat;
-        overflow: hidden;
-      }
-
       .access-label {
-        display: none;
+        margin: 0 0 14px;
+        color: #14b8a6;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
       }
 
       .access-title {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
+        margin: 0 0 32px;
+        color: #111827;
+        font-size: clamp(2rem, 8vw, 2.9rem);
+        font-weight: 850;
+        line-height: 0.96;
+        letter-spacing: -0.04em;
+        text-align: center;
       }
 
       .access-form {
@@ -393,11 +381,6 @@ const securityCodeLength = 6;
           width: min(100%, 620px);
         }
 
-        .visual-panel {
-          min-height: 340px;
-          order: -1;
-        }
-
         .access-card {
           min-height: auto;
           padding: 42px 28px 34px;
@@ -427,9 +410,6 @@ const securityCodeLength = 6;
           margin: 20px -18px -22px;
         }
 
-        .visual-panel {
-          min-height: 240px;
-        }
       }
     </style>
   </head>
@@ -438,14 +418,7 @@ const securityCodeLength = 6;
       <section class="access-stage">
         <div class="access-frame">
           <section class="access-card">
-            <div class="access-label">Magic link access</div>
-            <img
-              class="access-mark"
-              src="/images/magikit-trailblazer-banner-login.svg"
-              width="653"
-              height="197"
-              alt="Disney MagiKit Trailblazer"
-            />
+            <div class="access-label">Advanced Analytica</div>
             <h1 class="access-title">Secure sign-in code</h1>
 
             <form id="embedded-form-access" class="access-form">
@@ -526,8 +499,6 @@ const securityCodeLength = 6;
               Use the newest security code only once.
             </p>
           </section>
-
-          <aside class="visual-panel" aria-hidden="true"></aside>
         </div>
 
         <div class="login-footer">
