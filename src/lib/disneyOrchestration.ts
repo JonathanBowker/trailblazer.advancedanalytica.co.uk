@@ -768,12 +768,15 @@ async function postMatcherJson(
 }
 
 async function runCompliancePipeline(params: OrchestrationParams): Promise<OrchestrationStage> {
-  const prefectEndpoint = endpointFromEnv(
-    'PREFECT_DISNEY_PROMPT_APPROVER_RUN_URL',
-    'PREFECT_TRIGGER_API_URL',
-    '/flows/disney/prompt-approver-pipeline/run',
-    params.getEnvValue,
-  );
+  const prefectEndpoint =
+    params.getEnvValue('PREFECT_DISNEY_CREATIVE_SCREENING_RUN_URL') ||
+    params.getEnvValue('PREFECT_DISNEY_PROMPT_APPROVER_RUN_URL') ||
+    endpointFromEnv(
+      'PREFECT_DISNEY_CREATIVE_SCREENING_RUN_URL',
+      'PREFECT_TRIGGER_API_URL',
+      '/flows/disney/creative-screening-pipeline/run',
+      params.getEnvValue,
+    );
 
   if (prefectEndpoint) return runPrefectCompliancePipeline(params, prefectEndpoint);
 
