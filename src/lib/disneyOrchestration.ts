@@ -4,7 +4,6 @@ import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { sendSubmissionReceivedNotification } from './submissionNotification';
 
 type StageStatus = 'completed' | 'skipped' | 'failed';
 
@@ -866,6 +865,7 @@ async function runPrefectCompliancePipeline(
             generate_review_export: true,
             generate_image_assessment_export: true,
             publish_review_export: false,
+            deliver_submission_received_email: true,
             deliver_result_email: true,
             google_sheets_create_per_document: true,
             google_sheets_share_result_recipient: true,
@@ -941,6 +941,7 @@ function buildInlinePrefectPayload(params: OrchestrationParams, buffer: Buffer) 
     generate_review_export: true,
     generate_image_assessment_export: true,
     publish_review_export: false,
+    deliver_submission_received_email: true,
     deliver_result_email: true,
     google_sheets_create_per_document: true,
     google_sheets_share_result_recipient: true,
@@ -1119,17 +1120,6 @@ export async function orchestrateDisneySubmission(params: OrchestrationParams) {
     runCompliancePipeline(params),
     runLegacyIngest(params),
   ]);
-  const complianceEvidence = compliancePipeline.evidence as any;
-  if (compliancePipeline.status === 'completed' && complianceEvidence?.submitted_artifact) {
-    complianceEvidence.received_notification = await sendSubmissionReceivedNotification({
-      getEnvValue: params.getEnvValue,
-      manifest: params.manifest,
-      submission: params.submission,
-      submittedArtifact: complianceEvidence.submitted_artifact,
-      flowRunId: complianceEvidence.flow_run_id,
-      statusUrl: complianceEvidence.status_url,
-    });
-  }
   const imageMatcher = imageMatcherFromCompliance(compliancePipeline);
 
   const resultWithoutMessage = {
