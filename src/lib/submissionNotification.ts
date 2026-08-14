@@ -72,6 +72,38 @@ function buildPublicStatusUrl(statusUrl: string, getEnvValue: EnvReader) {
   return base ? `${base.replace(/\/+$/, '')}/${statusUrl.replace(/^\/+/, '')}` : statusUrl;
 }
 
+function buildPrefectRunLogsUrl(flowRunId: string, statusUrl: string, getEnvValue: EnvReader) {
+  if (!flowRunId) return buildPublicStatusUrl(statusUrl, getEnvValue);
+
+  const explicitBase =
+    getEnvValue('PREFECT_UI_PUBLIC_URL') ||
+    getEnvValue('PUBLIC_PREFECT_UI_URL') ||
+    getEnvValue('PREFECT_PUBLIC_URL');
+  const triggerBase =
+    getEnvValue('PREFECT_TRIGGER_PUBLIC_URL') ||
+    getEnvValue('PREFECT_TRIGGER_API_URL') ||
+    getEnvValue('PUBLIC_PREFECT_TRIGGER_API_URL');
+  const base = explicitBase || derivePrefectUiBase(triggerBase);
+
+  if (!base) return buildPublicStatusUrl(statusUrl, getEnvValue);
+  return `${base.replace(/\/+$/, '')}/v2/runs/flow-run/${encodeURIComponent(flowRunId)}?tab=Logs`;
+}
+
+function derivePrefectUiBase(triggerBase: string) {
+  if (!triggerBase) return '';
+
+  try {
+    const parsed = new URL(triggerBase);
+    parsed.pathname = '';
+    parsed.search = '';
+    parsed.hash = '';
+    if (parsed.port === '8080') parsed.port = '4200';
+    return parsed.toString().replace(/\/+$/, '');
+  } catch {
+    return '';
+  }
+}
+
 function renderAaSubmissionHtml({
   submitterName,
   submitterEmail,
@@ -95,7 +127,7 @@ function renderAaSubmissionHtml({
     ['File', fileName],
     ...(storageUri ? [['Bucket link', storageUri]] : []),
     ...(flowRunId ? [['Prefect flow run', flowRunId]] : []),
-    ...(statusUrl ? [['Status', statusUrl]] : []),
+    ...(statusUrl ? [['Prefect logs', statusUrl]] : []),
   ];
 
   return `<!doctype html>
@@ -120,8 +152,8 @@ function renderAaSubmissionHtml({
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;background:#111827;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
                   ${rows
                     .map(([label, value]) => {
-                      const renderedValue = label === 'Status' && statusUrl
-                        ? htmlLink(statusUrl, 'Open Prefect status')
+                      const renderedValue = label === 'Prefect logs' && statusUrl
+                        ? htmlLink(statusUrl, 'Open Prefect logs')
                         : label === 'Bucket link'
                           ? `<span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;overflow-wrap:anywhere;">${htmlEscape(value)}</span>`
                           : htmlEscape(value);
@@ -136,7 +168,7 @@ function renderAaSubmissionHtml({
                 ${statusUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 0;">
                   <tr>
                     <td bgcolor="#14b8a6" style="border-radius:12px;background:#14b8a6;">
-                      <a href="${htmlEscape(statusUrl)}" style="display:inline-block;padding:14px 22px;font-size:15px;line-height:1.2;font-weight:800;color:#041014;text-decoration:none;">Open Prefect status</a>
+                      <a href="${htmlEscape(statusUrl)}" style="display:inline-block;padding:14px 22px;font-size:15px;line-height:1.2;font-weight:800;color:#041014;text-decoration:none;">Open Prefect logs</a>
                     </td>
                   </tr>
                 </table>` : ''}
@@ -213,7 +245,7 @@ export async function sendSubmissionReceivedNotification(
     getNestedString(params.manifest, 'source_asset', 'original_name') ||
     'Unknown file';
   const storageUri = params.submittedArtifact?.uri || '';
-  const statusUrl = buildPublicStatusUrl(params.statusUrl || '', getEnvValue);
+  const statusUrl = buildPrefectRunLogsUrl(params.flowRunId || '', params.statusUrl || '', getEnvValue);
   const subject = `Document ready for processing: ${fileName}`;
 
   const textLines = [
@@ -225,7 +257,7 @@ export async function sendSubmissionReceivedNotification(
   ];
   if (storageUri) textLines.push(`Bucket link: ${storageUri}`);
   if (params.flowRunId) textLines.push(`Prefect flow run: ${params.flowRunId}`);
-  if (statusUrl) textLines.push(`Status: ${statusUrl}`);
+  if (statusUrl) textLines.push(`Prefect logs: ${statusUrl}`);
   const textBody = `${textLines.join('\n')}\n`;
 
   const htmlBody = renderAaSubmissionHtml({
