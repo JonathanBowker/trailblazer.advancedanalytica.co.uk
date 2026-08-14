@@ -64,7 +64,7 @@ function htmlEscape(value: string) {
 
 function htmlLink(url: string, label = url) {
   const safeUrl = htmlEscape(url);
-  return `<a href="${safeUrl}" style="color:#14b8a6;text-decoration:underline;text-underline-offset:3px;">${htmlEscape(label)}</a>`;
+  return `<a href="${safeUrl}" style="color:#ed1b2f;text-decoration:underline;text-underline-offset:3px;">${htmlEscape(label)}</a>`;
 }
 
 function buildPublicStatusUrl(statusUrl: string, getEnvValue: EnvReader) {
@@ -115,6 +115,7 @@ function renderAaSubmissionHtml({
   submitterEmail,
   company,
   fileName,
+  submittedAt,
   storageUri,
   flowRunId,
   statusUrl,
@@ -123,6 +124,7 @@ function renderAaSubmissionHtml({
   submitterEmail: string;
   company: string;
   fileName: string;
+  submittedAt: string;
   storageUri: string;
   flowRunId: string;
   statusUrl: string;
@@ -131,53 +133,49 @@ function renderAaSubmissionHtml({
     ['Person', `${submitterName}${submitterEmail ? ` <${submitterEmail}>` : ''}`],
     ['Company', company],
     ['File', fileName],
+    ...(submittedAt ? [['Submitted', submittedAt]] : []),
     ...(storageUri ? [['Bucket link', storageUri]] : []),
     ...(flowRunId && statusUrl ? [['Prefect flow run', flowRunId]] : []),
-    ...(statusUrl ? [['Prefect logs', statusUrl]] : []),
+    ...(statusUrl ? [['Status', statusUrl]] : []),
   ];
+
+  const rowHtml = rows
+    .map(([label, value]) => {
+      const renderedValue = label === 'Status' && statusUrl
+        ? htmlLink(statusUrl, 'Open Prefect logs')
+        : htmlEscape(value);
+      return `<tr>
+        <th style="padding:10px 12px;text-align:left;color:#475569;border-bottom:1px solid #e2e8f0;width:150px;">${htmlEscape(label)}</th>
+        <td style="padding:10px 12px;color:#0f172a;border-bottom:1px solid #e2e8f0;word-break:break-word;">${renderedValue}</td>
+      </tr>`;
+    })
+    .join('');
+  const statusButton = statusUrl
+    ? `<p style="margin:24px 0 0;">
+        <a href="${htmlEscape(statusUrl)}" style="display:inline-block;background:#ed1b2f;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:8px;">Open Prefect logs</a>
+      </p>`
+    : '';
 
   return `<!doctype html>
 <html>
-  <body style="margin:0;padding:0;background:#f4f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#111827;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f4f7fb;padding:32px 16px;">
+  <body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:28px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:640px;margin:0 0 18px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
             <tr>
-              <td style="font-size:26px;line-height:1.1;color:#17213a;font-weight:800;letter-spacing:-0.02em;">Advanced Analytica</td>
+              <td style="background:#ed1b2f;padding:22px 26px;color:#fff;">
+                <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">Advanced Analytica</p>
+                <h1 style="margin:0;font-size:24px;line-height:1.2;">Document queued for processing</h1>
+              </td>
             </tr>
-          </table>
-
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:640px;background:#0b0e14;border-radius:18px;overflow:hidden;">
             <tr>
-              <td style="padding:38px 38px 30px;text-align:left;">
-                <div style="margin:0 0 18px;font-size:12px;line-height:1.4;letter-spacing:0.14em;text-transform:uppercase;color:#14b8a6;font-weight:800;">Document received</div>
-                <h1 style="margin:0 0 16px;font-size:32px;line-height:1.12;color:#ffffff;font-weight:850;letter-spacing:-0.02em;">A new document is ready for processing.</h1>
-                <p style="margin:0 0 28px;font-size:16px;line-height:1.65;color:#b8c4d6;">The submitted asset has been uploaded to the submitted-artifacts bucket and queued for the compliance workflow.</p>
-
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;background:#111827;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
-                  ${rows
-                    .map(([label, value]) => {
-                      const renderedValue = label === 'Prefect logs' && statusUrl
-                        ? htmlLink(statusUrl, 'Open Prefect logs')
-                        : label === 'Bucket link'
-                          ? `<span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;overflow-wrap:anywhere;">${htmlEscape(value)}</span>`
-                          : htmlEscape(value);
-                      return `<tr>
-                        <th align="left" style="width:150px;padding:13px 14px;border-bottom:1px solid rgba(255,255,255,0.08);color:#7dd3fc;font-size:12px;line-height:1.4;text-transform:uppercase;letter-spacing:0.08em;">${htmlEscape(label)}</th>
-                        <td style="padding:13px 14px;border-bottom:1px solid rgba(255,255,255,0.08);color:#eef2ff;font-size:14px;line-height:1.45;overflow-wrap:anywhere;">${renderedValue}</td>
-                      </tr>`;
-                    })
-                    .join('')}
+              <td style="padding:24px 26px;">
+                <p style="margin:0 0 18px;color:#334155;line-height:1.6;">A new document has been uploaded to the submitted-artifacts bucket and is ready for processing.</p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border-top:1px solid #e2e8f0;">
+                  ${rowHtml}
                 </table>
-
-                ${statusUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 0;">
-                  <tr>
-                    <td bgcolor="#14b8a6" style="border-radius:12px;background:#14b8a6;">
-                      <a href="${htmlEscape(statusUrl)}" style="display:inline-block;padding:14px 22px;font-size:15px;line-height:1.2;font-weight:800;color:#041014;text-decoration:none;">Open Prefect logs</a>
-                    </td>
-                  </tr>
-                </table>` : ''}
+                ${statusButton}
               </td>
             </tr>
           </table>
@@ -256,6 +254,9 @@ export async function sendSubmissionReceivedNotification(
     getNestedString(params.submission, 'file', 'original_name') ||
     getNestedString(params.manifest, 'source_asset', 'original_name') ||
     'Unknown file';
+  const submittedAt =
+    getNestedString(params.submission, 'submitted_at') ||
+    getNestedString(params.manifest, 'submitted_at');
   const storageUri = params.submittedArtifact?.uri || '';
   const prefectLogsUrl = buildPrefectRunLogsUrl(params.flowRunId || '', params.statusUrl || '', getEnvValue);
   const subject = `Document ready for processing: ${fileName}`;
@@ -268,9 +269,10 @@ export async function sendSubmissionReceivedNotification(
     `Company: ${company}`,
     `File: ${fileName}`,
     ];
+    if (submittedAt) textLines.push(`Submitted: ${submittedAt}`);
     if (storageUri) textLines.push(`Bucket link: ${storageUri}`);
     if (includePrefectLink && params.flowRunId) textLines.push(`Prefect flow run: ${params.flowRunId}`);
-    if (includePrefectLink && prefectLogsUrl) textLines.push(`Prefect logs: ${prefectLogsUrl}`);
+    if (includePrefectLink && prefectLogsUrl) textLines.push(`Status: ${prefectLogsUrl}`);
     return `${textLines.join('\n')}\n`;
   };
 
@@ -279,6 +281,7 @@ export async function sendSubmissionReceivedNotification(
     submitterEmail,
     company,
     fileName,
+    submittedAt,
     storageUri,
     flowRunId: includePrefectLink ? params.flowRunId || '' : '',
     statusUrl: includePrefectLink ? prefectLogsUrl : '',
