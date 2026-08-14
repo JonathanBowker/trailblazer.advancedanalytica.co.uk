@@ -17,6 +17,7 @@ interface ImportMetaEnv {
   readonly DISNEY_COMPLIANCE_AUDIT_URL?: string;
   readonly DISNEY_COMPLIANCE_API_KEY?: string;
   readonly PREFECT_TRIGGER_API_URL?: string;
+  readonly PREFECT_DISNEY_PROMPT_APPROVER_RUN_URL?: string;
   readonly PREFECT_DISNEY_COMPLIANCE_RUN_URL?: string;
   readonly PREFECT_TRIGGER_API_KEY?: string;
   readonly DISNEY_SUBMITTED_ARTIFACTS_BUCKET?: string;

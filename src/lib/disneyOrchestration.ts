@@ -770,9 +770,9 @@ async function postMatcherJson(
 
 async function runCompliancePipeline(params: OrchestrationParams): Promise<OrchestrationStage> {
   const prefectEndpoint = endpointFromEnv(
-    'PREFECT_DISNEY_COMPLIANCE_RUN_URL',
+    'PREFECT_DISNEY_PROMPT_APPROVER_RUN_URL',
     'PREFECT_TRIGGER_API_URL',
-    '/flows/disney/brand-compliance-pipeline/run',
+    '/flows/disney/prompt-approver-pipeline/run',
     params.getEnvValue,
   );
 
@@ -867,6 +867,9 @@ async function runPrefectCompliancePipeline(
             generate_image_assessment_export: true,
             publish_review_export: false,
             deliver_result_email: true,
+            google_sheets_create_per_document: true,
+            google_sheets_share_result_recipient: true,
+            google_sheets_send_share_notification: false,
           }
         : buildInlinePrefectPayload(params, buffer);
 
@@ -908,8 +911,8 @@ async function runPrefectCompliancePipeline(
       status: 'completed',
       endpoint,
       message: uploadedDocument
-        ? 'Uploaded creative to submitted-artifacts storage and queued Disney compliance analysis in Prefect.'
-        : 'Queued Disney compliance analysis in Prefect.',
+        ? 'Uploaded creative to submitted-artifacts storage and queued Disney AI pre-screening in Prefect.'
+        : 'Queued Disney AI pre-screening in Prefect.',
       evidence: uploadedDocument ? { ...evidence, submitted_artifact: uploadedDocument } : evidence,
     };
   } catch (error) {
@@ -939,6 +942,9 @@ function buildInlinePrefectPayload(params: OrchestrationParams, buffer: Buffer) 
     generate_image_assessment_export: true,
     publish_review_export: false,
     deliver_result_email: true,
+    google_sheets_create_per_document: true,
+    google_sheets_share_result_recipient: true,
+    google_sheets_send_share_notification: false,
   };
 }
 
