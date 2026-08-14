@@ -21,11 +21,13 @@ type SubmissionNotificationResult = {
   status: 'sent' | 'skipped' | 'failed';
   message: string;
   messageId?: string;
+  messageIds?: string[];
   recipients?: string[];
   reason?: string;
 };
 
 const defaultRecipients = ['jonathan@advancedanalytica.co.uk', 'claire.wadham@advancedanalytica.co.uk'];
+const defaultPrefectLinkRecipients = ['jonathan@advancedanalytica.co.uk'];
 
 function truthy(value: string) {
   return /^(1|true|yes|on)$/i.test(value.trim());
@@ -36,6 +38,10 @@ function parseEmailList(value: string) {
     .split(/[,\s;]+/)
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function uniqueEmailList(values: string[]) {
+  return [...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean))];
 }
 
 function getNestedString(source: Record<string, unknown>, ...path: string[]) {
@@ -126,7 +132,7 @@ function renderAaSubmissionHtml({
     ['Company', company],
     ['File', fileName],
     ...(storageUri ? [['Bucket link', storageUri]] : []),
-    ...(flowRunId ? [['Prefect flow run', flowRunId]] : []),
+    ...(flowRunId && statusUrl ? [['Prefect flow run', flowRunId]] : []),
     ...(statusUrl ? [['Prefect logs', statusUrl]] : []),
   ];
 
@@ -217,6 +223,12 @@ export async function sendSubmissionReceivedNotification(
       ? parseEmailList(getEnvValue('TRAILBLAZER_RECEIVED_EMAIL_RECIPIENTS'))
       : defaultRecipients;
   const cc = parseEmailList(getEnvValue('TRAILBLAZER_RECEIVED_EMAIL_CC'));
+  const allRecipients = uniqueEmailList([...recipients, ...cc]);
+  const prefectLinkRecipients =
+    parseEmailList(getEnvValue('TRAILBLAZER_RECEIVED_EMAIL_PREFECT_LINK_RECIPIENTS')).length > 0
+      ? parseEmailList(getEnvValue('TRAILBLAZER_RECEIVED_EMAIL_PREFECT_LINK_RECIPIENTS'))
+      : defaultPrefectLinkRecipients;
+  const prefectLinkRecipientSet = new Set(prefectLinkRecipients);
   const region =
     getEnvValue('TRAILBLAZER_RECEIVED_EMAIL_AWS_REGION') ||
     getEnvValue('DISNEY_RESULT_EMAIL_AWS_REGION') ||
@@ -245,29 +257,31 @@ export async function sendSubmissionReceivedNotification(
     getNestedString(params.manifest, 'source_asset', 'original_name') ||
     'Unknown file';
   const storageUri = params.submittedArtifact?.uri || '';
-  const statusUrl = buildPrefectRunLogsUrl(params.flowRunId || '', params.statusUrl || '', getEnvValue);
+  const prefectLogsUrl = buildPrefectRunLogsUrl(params.flowRunId || '', params.statusUrl || '', getEnvValue);
   const subject = `Document ready for processing: ${fileName}`;
 
-  const textLines = [
+  const buildTextBody = (includePrefectLink: boolean) => {
+    const textLines = [
     'A new document has been uploaded to the submitted-artifacts bucket and is ready for processing.',
     '',
     `Person: ${submitterName}${submitterEmail ? ` <${submitterEmail}>` : ''}`,
     `Company: ${company}`,
     `File: ${fileName}`,
-  ];
-  if (storageUri) textLines.push(`Bucket link: ${storageUri}`);
-  if (params.flowRunId) textLines.push(`Prefect flow run: ${params.flowRunId}`);
-  if (statusUrl) textLines.push(`Prefect logs: ${statusUrl}`);
-  const textBody = `${textLines.join('\n')}\n`;
+    ];
+    if (storageUri) textLines.push(`Bucket link: ${storageUri}`);
+    if (includePrefectLink && params.flowRunId) textLines.push(`Prefect flow run: ${params.flowRunId}`);
+    if (includePrefectLink && prefectLogsUrl) textLines.push(`Prefect logs: ${prefectLogsUrl}`);
+    return `${textLines.join('\n')}\n`;
+  };
 
-  const htmlBody = renderAaSubmissionHtml({
+  const buildHtmlBody = (includePrefectLink: boolean) => renderAaSubmissionHtml({
     submitterName,
     submitterEmail,
     company,
     fileName,
     storageUri,
-    flowRunId: params.flowRunId || '',
-    statusUrl,
+    flowRunId: includePrefectLink ? params.flowRunId || '' : '',
+    statusUrl: includePrefectLink ? prefectLogsUrl : '',
   });
 
   try {
@@ -279,36 +293,42 @@ export async function sendSubmissionReceivedNotification(
         sessionToken: getEnvValue('TRAILBLAZER_RECEIVED_EMAIL_AWS_SESSION_TOKEN') || getEnvValue('AWS_SESSION_TOKEN') || undefined,
       },
     });
-    const response = await client.send(
-      new SendEmailCommand({
-        FromEmailAddress: fromName ? `${fromName} <${fromEmail}>` : fromEmail,
-        Destination: {
-          ToAddresses: recipients,
-          CcAddresses: cc,
-        },
-        Content: {
-          Simple: {
-            Subject: { Data: subject, Charset: 'UTF-8' },
-            Body: {
-              Text: { Data: textBody, Charset: 'UTF-8' },
-              Html: { Data: htmlBody, Charset: 'UTF-8' },
+
+    const messageIds: string[] = [];
+    for (const recipient of allRecipients) {
+      const includePrefectLink = prefectLinkRecipientSet.has(recipient);
+      const response = await client.send(
+        new SendEmailCommand({
+          FromEmailAddress: fromName ? `${fromName} <${fromEmail}>` : fromEmail,
+          Destination: {
+            ToAddresses: [recipient],
+          },
+          Content: {
+            Simple: {
+              Subject: { Data: subject, Charset: 'UTF-8' },
+              Body: {
+                Text: { Data: buildTextBody(includePrefectLink), Charset: 'UTF-8' },
+                Html: { Data: buildHtmlBody(includePrefectLink), Charset: 'UTF-8' },
+              },
             },
           },
-        },
-      }),
-    );
+        }),
+      );
+      if (response.MessageId) messageIds.push(response.MessageId);
+    }
 
     return {
       status: 'sent',
       message: 'Received notification email sent.',
-      messageId: response.MessageId,
-      recipients: [...recipients, ...cc],
+      messageId: messageIds[0],
+      messageIds,
+      recipients: allRecipients,
     };
   } catch (error) {
     return {
       status: 'failed',
       message: error instanceof Error ? error.message : 'Received notification email failed.',
-      recipients: [...recipients, ...cc],
+      recipients: allRecipients,
     };
   }
 }
