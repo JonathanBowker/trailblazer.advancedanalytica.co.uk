@@ -126,6 +126,24 @@ function sha256(buffer: Buffer) {
   return createHash('sha256').update(new Uint8Array(buffer)).digest('hex');
 }
 
+function metadataText(value: unknown) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[^\x20-\x7E]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 512);
+}
+
+function manifestText(manifest: Record<string, unknown>, path: string[]) {
+  let current: unknown = manifest;
+  for (const key of path) {
+    if (!current || typeof current !== 'object' || !(key in current)) return '';
+    current = (current as Record<string, unknown>)[key];
+  }
+  return metadataText(current);
+}
+
 function startsWithPngSignature(buffer: Buffer) {
   if (buffer.length < pngSignature.length) return false;
   for (let index = 0; index < pngSignature.length; index += 1) {
@@ -1001,9 +1019,12 @@ async function uploadSubmittedArtifactForPrefect(
       Body: buffer,
       ContentType: params.mediaType || 'application/octet-stream',
       Metadata: {
-        submission_id: params.submissionId,
-        original_filename: params.originalFilename,
-        source_sha256: sha256(buffer),
+        'submission-id': params.submissionId,
+        'original-filename': metadataText(params.originalFilename),
+        'source-sha256': sha256(buffer),
+        'company-name': manifestText(params.manifest, ['partner', 'name']),
+        'person-name': manifestText(params.manifest, ['result_recipient', 'display_name']),
+        'person-email': manifestText(params.manifest, ['result_recipient', 'email']).toLowerCase(),
       },
     }),
   );
