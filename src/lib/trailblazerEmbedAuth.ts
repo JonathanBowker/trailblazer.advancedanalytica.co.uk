@@ -2,14 +2,16 @@ import type { AstroCookies } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import validGuidListSeed from '../data/trailblazer-valid-guids.json';
 
 export const trailblazerEmbedFormPath = '/forms/brand-readiness-assessment/embed';
 export const trailblazerStandardFormPath = '/forms/brand-readiness-assessment';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const validGuidFileUrl = new URL('../data/trailblazer-valid-guids.json', import.meta.url);
+const defaultRuntimeGuidFilePath = '/tmp/trailblazer-valid-guids.json';
 const embedCookieName = 'trailblazer_embed_access';
 const embedCookieMaxAgeSeconds = 60 * 60 * 8;
+const initialValidGuidList = (validGuidListSeed as string[]).map((value) => value.toLowerCase());
 
 type TrailblazerEmbedClaims = {
   uid: string;
@@ -124,17 +126,32 @@ function decodeCookieValue(value: string | undefined): TrailblazerEmbedClaims | 
 }
 
 async function readValidGuidList() {
-  const raw = await readFile(validGuidFileUrl, 'utf8');
-  const parsed = JSON.parse(raw);
-  return Array.isArray(parsed) ? parsed.map((value) => String(value).toLowerCase()) : [];
+  try {
+    const raw = await readFile(getRuntimeGuidFilePath(), 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map((value) => String(value).toLowerCase()) : [];
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') throw error;
+    await writeValidGuidList(initialValidGuidList);
+    return [...initialValidGuidList];
+  }
 }
 
 async function writeValidGuidList(list: string[]) {
-  const filePath = validGuidFileUrl.pathname;
+  const filePath = getRuntimeGuidFilePath();
   const tempPath = `${filePath}.tmp`;
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(tempPath, `${JSON.stringify(list)}\n`, 'utf8');
   await rename(tempPath, filePath);
+}
+
+function getRuntimeGuidFilePath() {
+  const env = import.meta.env as Record<string, string | undefined>;
+  return (
+    env.TRAILBLAZER_VALID_GUIDS_FILE ||
+    process.env.TRAILBLAZER_VALID_GUIDS_FILE ||
+    defaultRuntimeGuidFilePath
+  );
 }
 
 async function consumeValidGuid(token: string) {
