@@ -1,5 +1,5 @@
 import type { AstroCookies } from 'astro';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import validGuidListSeed from '../data/trailblazer-valid-guids.json';
@@ -12,6 +12,7 @@ const defaultRuntimeGuidFilePath = '/tmp/trailblazer-valid-guids.json';
 const embedCookieName = 'trailblazer_embed_access';
 const embedCookieMaxAgeSeconds = 60 * 60 * 8;
 const initialValidGuidList = (validGuidListSeed as string[]).map((value) => value.toLowerCase());
+let guidMutationQueue: Promise<unknown> = Promise.resolve();
 
 type TrailblazerEmbedClaims = {
   uid: string;
@@ -139,7 +140,7 @@ async function readValidGuidList() {
 
 async function writeValidGuidList(list: string[]) {
   const filePath = getRuntimeGuidFilePath();
-  const tempPath = `${filePath}.tmp`;
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(tempPath, `${JSON.stringify(list)}\n`, 'utf8');
   await rename(tempPath, filePath);
@@ -155,13 +156,21 @@ function getRuntimeGuidFilePath() {
 }
 
 async function consumeValidGuid(token: string) {
-  const validGuidList = await readValidGuidList();
-  const tokenIndex = validGuidList.indexOf(token);
-  if (tokenIndex === -1) return false;
+  return withGuidMutation(async () => {
+    const validGuidList = await readValidGuidList();
+    const tokenIndex = validGuidList.indexOf(token);
+    if (tokenIndex === -1) return false;
 
-  validGuidList.splice(tokenIndex, 1);
-  await writeValidGuidList(validGuidList);
-  return true;
+    validGuidList.splice(tokenIndex, 1);
+    await writeValidGuidList(validGuidList);
+    return true;
+  });
+}
+
+function withGuidMutation<T>(callback: () => Promise<T>) {
+  const next = guidMutationQueue.then(callback, callback);
+  guidMutationQueue = next.catch(() => undefined);
+  return next;
 }
 
 function claimsMatch(left: TrailblazerEmbedClaims | null, right: TrailblazerEmbedClaims) {
