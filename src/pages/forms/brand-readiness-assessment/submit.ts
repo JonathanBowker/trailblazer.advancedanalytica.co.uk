@@ -4,7 +4,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { orchestrateDisneySubmission } from '../../../lib/disneyOrchestration';
 import { createSupabaseServerClient, isSupabaseConfigured } from '../../../lib/supabaseServer';
-import { getTrailblazerEmbedSession, trailblazerEmbedFormPath } from '../../../lib/trailblazerEmbedAuth';
+import {
+  getTrailblazerEmbedSession,
+  trailblazerEmbedFormPath,
+  verifyTrailblazerEmbedSessionFromCookie,
+} from '../../../lib/trailblazerEmbedAuth';
 
 export const prerender = false;
 
@@ -145,6 +149,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!formData) return redirectToForm({ error: 'invalid' });
 
   const embedSession = getTrailblazerEmbedSession(formData);
+  const verifiedEmbedSession = verifyTrailblazerEmbedSessionFromCookie(formData, cookies);
   let submissionUser:
     | {
         id: string;
@@ -155,12 +160,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     | null = null;
 
-  if (embedSession.isValid) {
+  if (verifiedEmbedSession.isValid) {
     submissionUser = {
-      id: `umbraco:${embedSession.uid}`,
-      name: embedSession.name || embedSession.uid,
-      email: embedSession.email,
-      company: embedSession.company || 'Umbraco portal user',
+      id: `umbraco:${verifiedEmbedSession.uid}`,
+      name: verifiedEmbedSession.name || verifiedEmbedSession.uid,
+      email: verifiedEmbedSession.email,
+      company: verifiedEmbedSession.company || 'Umbraco portal user',
       source: 'umbraco_embed',
     };
   } else {
@@ -336,6 +341,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       submitted: '1',
       submission: submissionId,
     },
-    embedSession,
+    verifiedEmbedSession.isValid ? verifiedEmbedSession : embedSession,
   );
 };

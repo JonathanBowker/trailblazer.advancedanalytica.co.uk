@@ -98,8 +98,32 @@ const formErrorMessage =
     <meta name="msapplication-TileImage" content="/images/favicon/ms-icon-144x144.png" />
     <style is:inline set:html={baseThemeCss}></style>
     <style is:inline>
+      @font-face {
+        font-family: "Avenir Trailblazer";
+        src:
+          url("/fonts/avenir.woff2") format("woff2"),
+          url("/fonts/avenir.woff") format("woff");
+        font-weight: 400 900;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Ambit Trailblazer";
+        src:
+          url("/fonts/Ambit-Black.woff2") format("woff2"),
+          url("/fonts/Ambit-Black.woff") format("woff");
+        font-weight: 900;
+        font-style: normal;
+        font-display: swap;
+      }
+
       :root {
         color-scheme: light;
+        --font-body: "Avenir Trailblazer", Avenir, sans-serif;
+        --font-display: "Ambit Trailblazer", "Avenir Trailblazer", Avenir, sans-serif;
+        --magikit-red: #F0122C;
+        --trailblazer-text: #363636;
       }
 
       html,
@@ -111,6 +135,7 @@ const formErrorMessage =
 
       body {
         font-family: var(--font-body, sans-serif);
+        color: var(--trailblazer-text);
       }
 
       .embed-shell {
@@ -149,9 +174,9 @@ const formErrorMessage =
       .access-label {
         font-size: 0.7rem;
         font-weight: 700;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: var(--color-accent);
+        letter-spacing: normal;
+        text-transform: none;
+        color: var(--trailblazer-text);
       }
 
       .access-title {
@@ -159,14 +184,14 @@ const formErrorMessage =
         font-family: var(--font-display, sans-serif);
         font-size: clamp(2rem, 6vw, 3rem);
         line-height: 0.98;
-        color: #0f172a;
+        color: var(--trailblazer-text);
       }
 
       .access-copy {
         margin: 14px 0 0;
         font-size: 0.98rem;
         line-height: 1.75;
-        color: #475569;
+        color: var(--trailblazer-text);
       }
 
       .access-form {
@@ -180,17 +205,17 @@ const formErrorMessage =
         gap: 8px;
         font-size: 0.9rem;
         font-weight: 600;
-        color: #0f172a;
+        color: var(--trailblazer-text);
       }
 
       .access-input {
         width: 100%;
-        border-radius: 18px;
+        border-radius: 8px;
         border: 1px solid rgba(148, 163, 184, 0.34);
         background: #fff;
         padding: 14px 16px;
         font: inherit;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         outline: none;
       }
 
@@ -206,17 +231,19 @@ const formErrorMessage =
 
       .access-button,
       .access-link {
-        border-radius: 999px;
+        border-radius: 8px;
+        letter-spacing: normal;
         padding: 13px 18px;
         font-size: 0.9rem;
         font-weight: 700;
         text-decoration: none;
+        text-transform: none;
       }
 
       .access-button {
         border: 0;
         background: var(--color-accent);
-        color: #fff;
+        color: var(--trailblazer-text);
         cursor: pointer;
       }
 
@@ -227,13 +254,13 @@ const formErrorMessage =
 
       .access-link {
         border: 1px solid rgba(148, 163, 184, 0.34);
-        color: #0f172a;
+        color: var(--trailblazer-text);
         background: #fff;
       }
 
       .access-status {
         display: none;
-        border-radius: 18px;
+        border-radius: 8px;
         border: 1px solid transparent;
         padding: 14px 16px;
         font-size: 0.92rem;
@@ -247,27 +274,25 @@ const formErrorMessage =
       .access-status.is-success {
         border-color: #a7f3d0;
         background: #ecfdf5;
-        color: #065f46;
+        color: var(--trailblazer-text);
       }
 
       .access-status.is-error {
         border-color: #fecaca;
         background: #fff1f2;
-        color: #9f1239;
+        color: var(--trailblazer-text);
       }
 
       .preview-chip {
         position: fixed;
         top: 14px;
         z-index: 20;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.88);
-        color: #fff;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--trailblazer-text);
         padding: 8px 12px;
         font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
       }
 
       .preview-chip {
@@ -279,16 +304,14 @@ const formErrorMessage =
         top: 14px;
         right: 14px;
         z-index: 30;
-        border-radius: 999px;
+        border-radius: 8px;
         border: 1px solid rgba(15, 23, 42, 0.12);
         background: rgba(255, 255, 255, 0.9);
-        color: rgba(15, 23, 42, 0.72);
+        color: var(--trailblazer-text);
         padding: 8px 12px;
         font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.08em;
         text-decoration: none;
-        text-transform: uppercase;
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
         opacity: 0.34;
         transition:
@@ -300,15 +323,13 @@ const formErrorMessage =
       .embed-signout:hover,
       .embed-signout:focus-visible {
         background: #fff;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         opacity: 1;
       }
 
       .native-shell {
         min-height: 100vh;
-        background:
-          radial-gradient(circle at 12% 8%, rgba(237, 27, 47, 0.12), transparent 28%),
-          linear-gradient(135deg, #f8fafc 0%, #fff 48%, #fff1f2 100%);
+        background: linear-gradient(135deg, #f8fafc 0%, #fff 48%, #fff1f2 100%);
         padding: 28px 18px 48px;
       }
 
@@ -324,8 +345,8 @@ const formErrorMessage =
 
       .native-header {
         padding: clamp(18px, 4vw, 34px);
-        background: #ed1b2f;
-        color: #fff;
+        background: var(--magikit-red);
+        color: var(--trailblazer-text);
       }
 
       .magikit-heading {
@@ -338,15 +359,13 @@ const formErrorMessage =
         width: min(100%, 675px);
         height: auto;
         display: block;
-        border-radius: 10px;
+        border-radius: 8px;
       }
 
       .native-label {
-        color: #ed1b2f;
+        color: var(--magikit-red);
         font-size: 0.72rem;
         font-weight: 800;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
       }
 
       .native-title {
@@ -354,13 +373,13 @@ const formErrorMessage =
         font-family: var(--font-display, sans-serif);
         font-size: clamp(2rem, 5.4vw, 3.8rem);
         line-height: 1;
-        letter-spacing: -0.045em;
+        color: var(--trailblazer-text);
       }
 
       .native-copy {
         max-width: 58ch;
         margin: 0 auto;
-        color: rgba(255, 255, 255, 0.84);
+        color: #fff;
         font-size: 1rem;
         line-height: 1.75;
         text-align: center;
@@ -385,9 +404,9 @@ const formErrorMessage =
       .native-chat-bubble {
         justify-self: start;
         max-width: 54ch;
-        border-radius: 22px 22px 22px 6px;
+        border-radius: 8px;
         background: #fff1f2;
-        color: #b91c1c;
+        color: var(--trailblazer-text);
         padding: 16px 18px;
         font-size: 0.96rem;
         line-height: 1.65;
@@ -397,7 +416,7 @@ const formErrorMessage =
         display: grid;
         gap: 8px;
         border: 1px solid rgba(148, 163, 184, 0.28);
-        border-radius: 18px;
+        border-radius: 8px;
         background: #fff;
         padding: 16px;
       }
@@ -411,7 +430,7 @@ const formErrorMessage =
       }
 
       .native-profile-item dt {
-        color: #64748b;
+        color: var(--trailblazer-text);
         font-size: 0.95rem;
         font-weight: 850;
         letter-spacing: 0;
@@ -423,7 +442,7 @@ const formErrorMessage =
 
       .native-profile-item dd {
         margin: 0;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font-size: 0.95rem;
         font-weight: 800;
         line-height: 1.4;
@@ -436,17 +455,16 @@ const formErrorMessage =
       }
 
       .native-chat-question h2 {
-        margin: 0;
-        color: #0f172a;
+        margin: 0 0 0.5em;
+        color: var(--trailblazer-text);
         font-family: var(--font-display, sans-serif);
-        font-size: clamp(1.45rem, 4vw, 2.25rem);
-        line-height: 1.05;
-        letter-spacing: -0.04em;
+        font-size: 1.778em;
+        line-height: 1.2;
       }
 
       .native-chat-question p {
-        margin: 0;
-        color: #64748b;
+        margin: 0 0 0.5em;
+        color: var(--trailblazer-text);
         font-size: 0.95rem;
         line-height: 1.65;
       }
@@ -465,7 +483,7 @@ const formErrorMessage =
       .native-field {
         display: grid;
         gap: 8px;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font-size: 0.9rem;
         font-weight: 750;
       }
@@ -477,7 +495,7 @@ const formErrorMessage =
       }
 
       .native-field small {
-        color: #64748b;
+        color: var(--trailblazer-text);
         font-size: 0.78rem;
         font-weight: 600;
       }
@@ -488,9 +506,9 @@ const formErrorMessage =
       .native-file {
         width: 100%;
         border: 1px solid rgba(148, 163, 184, 0.38);
-        border-radius: 18px;
+        border-radius: 8px;
         background: #fff;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font: inherit;
         padding: 14px 16px;
         outline: none;
@@ -500,7 +518,7 @@ const formErrorMessage =
       }
 
       .native-input[readonly] {
-        color: #475569;
+        color: var(--trailblazer-text);
         background: #f8fafc;
       }
 
@@ -508,8 +526,8 @@ const formErrorMessage =
       .native-select:focus,
       .native-textarea:focus,
       .native-file:focus {
-        border-color: #ed1b2f;
-        box-shadow: 0 0 0 4px rgba(237, 27, 47, 0.13);
+        border-color: var(--magikit-red);
+        box-shadow: 0 0 0 4px rgba(240, 18, 44, 0.13);
       }
 
       .native-textarea {
@@ -529,7 +547,7 @@ const formErrorMessage =
         border: 2px dashed #0f172a;
         border-radius: 8px;
         background: #fff;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         cursor: pointer;
         overflow: hidden;
         padding: 18px 24px;
@@ -537,8 +555,7 @@ const formErrorMessage =
         transition:
           background 180ms ease,
           border-color 180ms ease,
-          box-shadow 180ms ease,
-          transform 180ms ease;
+          box-shadow 180ms ease;
       }
 
       .native-dropzone:hover,
@@ -567,7 +584,7 @@ const formErrorMessage =
       }
 
       .native-dropzone-title {
-        color: #334155;
+        color: var(--trailblazer-text);
         font-size: 1.05rem;
         font-weight: 500;
         letter-spacing: 0;
@@ -580,8 +597,8 @@ const formErrorMessage =
       }
 
       .native-dropzone-help {
-        margin: 0;
-        color: #64748b;
+        margin: 0 0 0.5em;
+        color: var(--trailblazer-text);
         font-size: 0.9rem;
         line-height: 1.55;
       }
@@ -590,7 +607,7 @@ const formErrorMessage =
         display: none;
         align-items: center;
         gap: 14px;
-        border-radius: 16px;
+        border-radius: 8px;
         border: 1px solid rgba(148, 163, 184, 0.28);
         background: #fff;
         padding: 12px;
@@ -608,12 +625,12 @@ const formErrorMessage =
         height: 76px;
         flex: 0 0 auto;
         place-items: center;
-        border-radius: 12px;
+        border-radius: 8px;
         background: #f1f5f9;
-        color: #64748b;
+        color: var(--trailblazer-text);
         font-size: 0.78rem;
         font-weight: 900;
-        letter-spacing: 0.06em;
+        letter-spacing: 0;
         object-fit: cover;
         overflow: hidden;
       }
@@ -621,7 +638,7 @@ const formErrorMessage =
       .native-file-thumb.is-document {
         width: 82px;
         height: 104px;
-        border-radius: 12px;
+        border-radius: 8px;
         background: #e2e8f0;
         padding: 5px;
         box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
@@ -636,7 +653,7 @@ const formErrorMessage =
         width: 20px;
         height: 20px;
         border: 2px solid rgba(100, 116, 139, 0.28);
-        border-top-color: #ed1b2f;
+        border-top-color: var(--magikit-red);
         border-radius: 999px;
         animation: native-file-spin 700ms linear infinite;
       }
@@ -668,7 +685,7 @@ const formErrorMessage =
 
       .native-file-name {
         margin: 0;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font-size: 0.95rem;
         font-weight: 850;
         line-height: 1.35;
@@ -678,13 +695,13 @@ const formErrorMessage =
 
       .native-file-detail {
         margin: 4px 0 0;
-        color: #64748b;
+        color: var(--trailblazer-text);
         font-size: 0.82rem;
       }
 
       .native-file-warning {
         margin: -8px 0 0;
-        color: #b91c1c;
+        color: var(--trailblazer-text);
         font-size: 0.86rem;
         font-weight: 750;
         line-height: 1.45;
@@ -696,47 +713,49 @@ const formErrorMessage =
 
       .native-file-remove {
         border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 999px;
+        border-radius: 8px;
         background: #fff;
-        color: #334155;
+        color: var(--trailblazer-text);
         cursor: pointer;
         font: inherit;
         font-size: 0.82rem;
         font-weight: 800;
+        letter-spacing: normal;
         padding: 9px 12px;
+        text-transform: none;
       }
 
       .native-file-remove:hover,
       .native-file-remove:focus-visible {
-        border-color: #ef4444;
-        color: #b91c1c;
+        border-color: var(--magikit-red);
+        color: var(--trailblazer-text);
       }
 
       .native-note,
       .native-error {
-        border-radius: 18px;
+        border-radius: 8px;
         padding: 14px 16px;
         font-size: 0.92rem;
         line-height: 1.6;
       }
 
       .native-note {
-        border: 1px solid rgba(237, 27, 47, 0.2);
-        background: rgba(237, 27, 47, 0.08);
-        color: #b91c1c;
+        border: 1px solid rgba(240, 18, 44, 0.2);
+        background: rgba(240, 18, 44, 0.08);
+        color: var(--trailblazer-text);
       }
 
       .native-error {
         border: 1px solid #fecaca;
         background: #fff1f2;
-        color: #9f1239;
+        color: var(--trailblazer-text);
       }
 
       .native-review {
         display: grid;
         gap: 18px;
         border: 1px solid rgba(148, 163, 184, 0.28);
-        border-radius: 18px;
+        border-radius: 8px;
         background: #fff;
         padding: 16px;
         box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
@@ -751,10 +770,10 @@ const formErrorMessage =
         justify-items: center;
         gap: 12px;
         border: 1px solid rgba(148, 163, 184, 0.28);
-        border-radius: 18px;
+        border-radius: 8px;
         background: #fff;
         padding: 22px;
-        color: #64748b;
+        color: var(--trailblazer-text);
         font-size: 0.92rem;
         font-weight: 750;
         text-align: center;
@@ -769,15 +788,15 @@ const formErrorMessage =
         display: grid;
         justify-items: center;
         gap: 12px;
-        border: 1px solid rgba(237, 27, 47, 0.18);
-        border-radius: 18px;
-        background: linear-gradient(135deg, rgba(237, 27, 47, 0.08), #fff 62%);
+        border: 1px solid rgba(240, 18, 44, 0.18);
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(240, 18, 44, 0.08), #fff 62%);
         padding: 22px;
-        color: #475569;
+        color: var(--trailblazer-text);
         font-size: 0.94rem;
         font-weight: 750;
         text-align: center;
-        box-shadow: 0 18px 48px rgba(237, 27, 47, 0.12);
+        box-shadow: 0 18px 48px rgba(240, 18, 44, 0.12);
       }
 
       .native-processing[hidden] {
@@ -787,7 +806,7 @@ const formErrorMessage =
       .native-review-spinner {
         width: 34px;
         height: 34px;
-        border: 3px solid rgba(237, 27, 47, 0.16);
+        border: 3px solid rgba(240, 18, 44, 0.16);
         border-top-color: var(--magikit-red);
         border-radius: 999px;
         animation: native-spin 0.8s linear infinite;
@@ -800,26 +819,24 @@ const formErrorMessage =
       }
 
       .native-review h3 {
-        margin: 0;
-        color: #0f172a;
+        margin: 0 0 0.5em;
+        color: var(--trailblazer-text);
         font-family: var(--font-display, sans-serif);
         font-size: clamp(1.25rem, 3vw, 1.65rem);
-        letter-spacing: -0.035em;
         line-height: 1.05;
       }
 
       .native-review p {
-        margin: 0;
-        color: #64748b;
+        margin: 0 0 0.5em;
+        color: var(--trailblazer-text);
         font-size: 0.92rem;
         line-height: 1.6;
       }
 
       .native-processing strong {
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font-family: var(--font-display, sans-serif);
         font-size: 1.15rem;
-        letter-spacing: -0.02em;
       }
 
       .native-processing span:last-child {
@@ -849,7 +866,7 @@ const formErrorMessage =
       }
 
       .native-review-row dt {
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font-size: 0.9rem;
         font-weight: 750;
         letter-spacing: 0;
@@ -860,9 +877,9 @@ const formErrorMessage =
         margin: 0;
         min-height: 52px;
         border: 1px solid rgba(148, 163, 184, 0.38);
-        border-radius: 18px;
+        border-radius: 8px;
         background: #fff;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font-size: 0.95rem;
         font-weight: 750;
         line-height: 1.45;
@@ -879,82 +896,78 @@ const formErrorMessage =
 
       .native-submit {
         border: 0;
-        border-radius: 999px;
-        background: #ed1b2f;
-        color: #fff;
+        border-radius: 8px;
+        background: var(--magikit-red);
+        color: var(--trailblazer-text);
         cursor: pointer;
         font-size: 0.88rem;
         font-weight: 900;
-        letter-spacing: 0.08em;
+        letter-spacing: normal;
         padding: 15px 22px;
-        text-transform: uppercase;
-        transition:
-          background 160ms ease,
-          transform 160ms ease;
+        text-transform: none;
+        transition: background 160ms ease;
       }
 
       .native-submit:hover,
       .native-submit:focus-visible {
-        background: #c8102e;
-        transform: translateY(-1px);
+        background: var(--magikit-red);
       }
 
       .native-reset {
         border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 999px;
+        border-radius: 8px;
         background: #fff;
-        color: #334155;
+        color: var(--trailblazer-text);
         cursor: pointer;
         font: inherit;
         font-size: 0.88rem;
         font-weight: 850;
-        letter-spacing: 0.04em;
+        letter-spacing: normal;
         padding: 14px 20px;
-        text-transform: uppercase;
+        text-transform: none;
         transition:
           border-color 160ms ease,
-          color 160ms ease,
-          transform 160ms ease;
+          color 160ms ease;
       }
 
       .native-reset:hover,
       .native-reset:focus-visible {
-        border-color: #ed1b2f;
-        color: #b91c1c;
-        transform: translateY(-1px);
+        border-color: var(--magikit-red);
+        color: var(--trailblazer-text);
       }
 
       .native-edit {
         border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 999px;
+        border-radius: 8px;
         background: #fff;
-        color: #334155;
+        color: var(--trailblazer-text);
         cursor: pointer;
         font: inherit;
         font-size: 0.84rem;
         font-weight: 850;
         justify-self: start;
+        letter-spacing: normal;
         padding: 10px 14px;
+        text-transform: none;
       }
 
       .native-edit:hover,
       .native-edit:focus-visible {
-        border-color: #ed1b2f;
-        color: #b91c1c;
+        border-color: var(--magikit-red);
+        color: var(--trailblazer-text);
       }
 
       .native-thanks h1 {
         margin: 0;
-        color: #0f172a;
+        color: var(--trailblazer-text);
         font-family: var(--font-display, sans-serif);
         font-size: clamp(2.1rem, 7vw, 4.4rem);
         line-height: 0.95;
-        letter-spacing: -0.055em;
       }
 
       .native-thanks p {
-        margin: 0;
-        color: #475569;
+        margin: 0 0 0.5em;
+        color: var(--trailblazer-text);
         font-size: 1rem;
         line-height: 1.8;
       }

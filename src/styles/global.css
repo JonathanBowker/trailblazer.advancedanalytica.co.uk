@@ -1,17 +1,21 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 @font-face {
-  font-family: "Neue Montreal";
-  src: url("/fonts/PPNeueMontreal-Book.otf") format("opentype");
-  font-weight: 400;
+  font-family: "Avenir Trailblazer";
+  src:
+    url("/fonts/avenir.woff2") format("woff2"),
+    url("/fonts/avenir.woff") format("woff");
+  font-weight: 400 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Neue Montreal";
-  src: url("/fonts/PPNeueMontreal-Regular.otf") format("opentype");
-  font-weight: 500;
+  font-family: "Ambit Trailblazer";
+  src:
+    url("/fonts/Ambit-Black.woff2") format("woff2"),
+    url("/fonts/Ambit-Black.woff") format("woff");
+  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
@@ -52,11 +56,13 @@ h5,
 h6 {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.008em;
+  letter-spacing: normal;
 }
 
 h2 {
-  letter-spacing: 0.004em;
+  font-size: 1.778em;
+  letter-spacing: normal;
+  margin-bottom: 0.5em;
 }
 
 h1 {
@@ -86,7 +92,8 @@ input[type="submit"],
 a[class*="cta"],
 a[class*="button"],
 .button {
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 ::selection {

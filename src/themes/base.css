@@ -1,8 +1,8 @@
 :root {
   --tenant-name: "Advanced Analytica";
   --tenant-logo-url: url("/images/infrastructure/logo.svg");
-  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Neue Montreal", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "Avenir Trailblazer", Avenir, ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Ambit Trailblazer", "Avenir Trailblazer", Avenir, ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-masthead: var(--font-display);
   --color-ink: #0b1220;
