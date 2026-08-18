@@ -1,0 +1,1621 @@
+---
+import '../../../styles/global.css';
+import { isLocalHostname } from '../../../lib/hosts';
+import {
+  getTrailblazerEmbedSession,
+  trailblazerStandardFormPath,
+} from '../../../lib/trailblazerEmbedAuth';
+import baseThemeCss from '../../../themes/base.css?raw';
+
+export const prerender = false;
+
+const tenant = { name: 'Advanced Analytica' };
+const service = {
+  slug: 'brand-readiness-assessment',
+  name: 'Trailblazer',
+  summary: 'Embedded Disney Trailblazer creative submission form.',
+};
+
+function isLocalPreviewRequest(request: Request) {
+  return isLocalHostname(new URL(request.url).hostname);
+}
+
+const previewRequested = Astro.url.searchParams.get('preview') === '1';
+const previewMode = previewRequested && isLocalPreviewRequest(Astro.request);
+const embedSession = getTrailblazerEmbedSession(Astro.url.searchParams);
+const canViewEmbed = embedSession.isValid || previewMode;
+const displayUserEmail = embedSession.email || (previewMode ? 'local-preview@advancedanalytica.test' : '');
+const displayUserName = embedSession.name || (previewMode ? 'Local preview user' : embedSession.uid);
+const displayUserCompany =
+  embedSession.company || (previewMode ? 'Advanced Analytica Preview' : 'Umbraco portal user');
+const signedInCompany = displayUserCompany;
+const submitPath = `${trailblazerStandardFormPath}/submit`;
+
+const useNativeDisneyCapture = true;
+const submitted = Astro.url.searchParams.get('submitted') === '1';
+const formError = Astro.url.searchParams.get('error') ?? '';
+const creativeWorkTypes = [
+  ['social_media_post', 'Social media post'],
+  ['social_media_ugc', 'Social media UGC'],
+  ['email_campaign', 'Email campaign'],
+  ['newsletter', 'Newsletter'],
+  ['brochure_print', 'Brochure / print'],
+  ['banner_display_ad', 'Banner / display ad'],
+  ['blog_vlog', 'Blog / Vlog'],
+  ['other', 'Other'],
+] as const;
+
+const formErrorMessage =
+  formError === 'file_type'
+    ? 'Upload a PDF, DOCX, PNG, or JPEG file.'
+    : formError === 'file_size'
+      ? 'The file is too large. Upload a file under 25MB.'
+      : formError === 'missing_file'
+        ? 'Choose a creative file to upload.'
+        : formError === 'pipeline'
+          ? 'MagiKit could not queue that file for processing. Please try again.'
+          : formError === 'date'
+            ? 'Enter valid activity start and end dates. The end date must be on or after the start date.'
+            : formError === 'origin'
+              ? 'Please submit the form from trailblazer.advancedanalytica.co.uk or the approved local test address.'
+              : formError === 'auth'
+                ? 'We could not verify that Trailblazer access link. Please open the tool again from the portal.'
+              : formError
+                ? 'We could not receive that submission. Please check the form and try again.'
+                : '';
+
+const accessErrorMessage =
+  embedSession.uid || embedSession.token
+    ? 'This Trailblazer link is not valid. Please open the tool again from the portal.'
+    : 'Trailblazer must be opened from the portal.';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{service.name} | {tenant.name}</title>
+    <meta name="description" content={service.summary} />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-icon-180x180.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/images/favicon/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png" />
+    <link rel="manifest" href="/images/favicon/manifest.json" />
+    <meta name="msapplication-TileImage" content="/images/favicon/ms-icon-144x144.png" />
+    <style is:inline set:html={baseThemeCss}></style>
+    <style is:inline>
+      :root {
+        color-scheme: light;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #fff;
+      }
+
+      body {
+        font-family: var(--font-body, sans-serif);
+      }
+
+      .embed-shell {
+        min-height: 100vh;
+        background: #fff;
+      }
+
+      .embed-frame,
+      .embed-typebot {
+        width: 100%;
+        min-height: 100vh;
+        border: 0;
+        display: block;
+        background: #fff;
+      }
+
+      .access-shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(circle at top, rgba(20, 184, 166, 0.08), transparent 34%),
+          #f8fafc;
+      }
+
+      .access-card {
+        width: min(100%, 460px);
+        border-radius: 28px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(255, 255, 255, 0.96);
+        padding: 32px;
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+      }
+
+      .access-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--color-accent);
+      }
+
+      .access-title {
+        margin: 14px 0 0;
+        font-family: var(--font-display, sans-serif);
+        font-size: clamp(2rem, 6vw, 3rem);
+        line-height: 0.98;
+        color: #0f172a;
+      }
+
+      .access-copy {
+        margin: 14px 0 0;
+        font-size: 0.98rem;
+        line-height: 1.75;
+        color: #475569;
+      }
+
+      .access-form {
+        margin-top: 28px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .access-field {
+        display: grid;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #0f172a;
+      }
+
+      .access-input {
+        width: 100%;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        background: #fff;
+        padding: 14px 16px;
+        font: inherit;
+        color: #0f172a;
+        outline: none;
+      }
+
+      .access-input:focus {
+        border-color: var(--color-accent);
+      }
+
+      .access-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .access-button,
+      .access-link {
+        border-radius: 999px;
+        padding: 13px 18px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .access-button {
+        border: 0;
+        background: var(--color-accent);
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .access-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+
+      .access-link {
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        color: #0f172a;
+        background: #fff;
+      }
+
+      .access-status {
+        display: none;
+        border-radius: 18px;
+        border: 1px solid transparent;
+        padding: 14px 16px;
+        font-size: 0.92rem;
+        line-height: 1.6;
+      }
+
+      .access-status.is-visible {
+        display: block;
+      }
+
+      .access-status.is-success {
+        border-color: #a7f3d0;
+        background: #ecfdf5;
+        color: #065f46;
+      }
+
+      .access-status.is-error {
+        border-color: #fecaca;
+        background: #fff1f2;
+        color: #9f1239;
+      }
+
+      .preview-chip {
+        position: fixed;
+        top: 14px;
+        z-index: 20;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.88);
+        color: #fff;
+        padding: 8px 12px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .preview-chip {
+        right: 14px;
+      }
+
+      .embed-signout {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 30;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: rgba(255, 255, 255, 0.9);
+        color: rgba(15, 23, 42, 0.72);
+        padding: 8px 12px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        text-transform: uppercase;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        opacity: 0.34;
+        transition:
+          opacity 160ms ease,
+          color 160ms ease,
+          background 160ms ease;
+      }
+
+      .embed-signout:hover,
+      .embed-signout:focus-visible {
+        background: #fff;
+        color: #0f172a;
+        opacity: 1;
+      }
+
+      .native-shell {
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 12% 8%, rgba(237, 27, 47, 0.12), transparent 28%),
+          linear-gradient(135deg, #f8fafc 0%, #fff 48%, #fff1f2 100%);
+        padding: 28px 18px 48px;
+      }
+
+      .native-card {
+        width: min(100%, 780px);
+        margin: 0 auto;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 30px;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 28px 90px rgba(15, 23, 42, 0.12);
+        overflow: hidden;
+      }
+
+      .native-header {
+        padding: clamp(18px, 4vw, 34px);
+        background: #ed1b2f;
+        color: #fff;
+      }
+
+      .magikit-heading {
+        display: grid;
+        justify-items: center;
+        gap: clamp(16px, 3vw, 26px);
+      }
+
+      .magikit-header-image {
+        width: min(100%, 675px);
+        height: auto;
+        display: block;
+        border-radius: 10px;
+      }
+
+      .native-label {
+        color: #ed1b2f;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .native-title {
+        margin: 16px 0 0;
+        font-family: var(--font-display, sans-serif);
+        font-size: clamp(2rem, 5.4vw, 3.8rem);
+        line-height: 1;
+        letter-spacing: -0.045em;
+      }
+
+      .native-copy {
+        max-width: 58ch;
+        margin: 0 auto;
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 1rem;
+        line-height: 1.75;
+        text-align: center;
+      }
+
+      .magikit-heading + .native-copy {
+        margin-top: clamp(14px, 3vw, 26px);
+      }
+
+      .native-form,
+      .native-thanks {
+        display: grid;
+        gap: 22px;
+        padding: clamp(24px, 5vw, 42px);
+      }
+
+      .native-chat-step {
+        display: grid;
+        gap: 18px;
+      }
+
+      .native-chat-bubble {
+        justify-self: start;
+        max-width: 54ch;
+        border-radius: 22px 22px 22px 6px;
+        background: #fff1f2;
+        color: #b91c1c;
+        padding: 16px 18px;
+        font-size: 0.96rem;
+        line-height: 1.65;
+      }
+
+      .native-profile-summary {
+        display: grid;
+        gap: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 18px;
+        background: #fff;
+        padding: 16px;
+      }
+
+      .native-profile-item {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: baseline;
+        margin: 0;
+      }
+
+      .native-profile-item dt {
+        color: #64748b;
+        font-size: 0.95rem;
+        font-weight: 850;
+        letter-spacing: 0;
+      }
+
+      .native-profile-item dt::after {
+        content: ":";
+      }
+
+      .native-profile-item dd {
+        margin: 0;
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 800;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+      }
+
+      .native-chat-question {
+        display: grid;
+        gap: 8px;
+      }
+
+      .native-chat-question h2 {
+        margin: 0;
+        color: #0f172a;
+        font-family: var(--font-display, sans-serif);
+        font-size: clamp(1.45rem, 4vw, 2.25rem);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+      }
+
+      .native-chat-question p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.65;
+      }
+
+      .native-grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      @media (min-width: 760px) {
+        .native-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .native-field {
+        display: grid;
+        gap: 8px;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 750;
+      }
+
+      .native-field span {
+        display: inline-flex;
+        gap: 6px;
+        align-items: baseline;
+      }
+
+      .native-field small {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+
+      .native-input,
+      .native-select,
+      .native-textarea,
+      .native-file {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.38);
+        border-radius: 18px;
+        background: #fff;
+        color: #0f172a;
+        font: inherit;
+        padding: 14px 16px;
+        outline: none;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .native-input[readonly] {
+        color: #475569;
+        background: #f8fafc;
+      }
+
+      .native-input:focus,
+      .native-select:focus,
+      .native-textarea:focus,
+      .native-file:focus {
+        border-color: #ed1b2f;
+        box-shadow: 0 0 0 4px rgba(237, 27, 47, 0.13);
+      }
+
+      .native-textarea {
+        min-height: 140px;
+        resize: vertical;
+      }
+
+      .native-file {
+        padding: 13px;
+      }
+
+      .native-dropzone {
+        position: relative;
+        display: grid;
+        min-height: 88px;
+        place-items: center;
+        border: 2px dashed #0f172a;
+        border-radius: 8px;
+        background: #fff;
+        color: #0f172a;
+        cursor: pointer;
+        overflow: hidden;
+        padding: 18px 24px;
+        text-align: center;
+        transition:
+          background 180ms ease,
+          border-color 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .native-dropzone:hover,
+      .native-dropzone.is-dragging,
+      .native-dropzone:focus-within {
+        border-color: #0f172a;
+        background: #f8fafc;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .native-dropzone input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        opacity: 0;
+      }
+
+      .native-dropzone-content {
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+        pointer-events: none;
+      }
+
+      .native-dropzone-title {
+        color: #334155;
+        font-size: 1.05rem;
+        font-weight: 500;
+        letter-spacing: 0;
+      }
+
+      .native-dropzone-text {
+        display: grid;
+        justify-items: center;
+        gap: 4px;
+      }
+
+      .native-dropzone-help {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+
+      .native-file-preview {
+        display: none;
+        align-items: center;
+        gap: 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: #fff;
+        padding: 12px;
+        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+      }
+
+      .native-file-preview.is-visible {
+        display: flex;
+      }
+
+      .native-file-thumb {
+        display: grid;
+        position: relative;
+        width: 76px;
+        height: 76px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        object-fit: cover;
+        overflow: hidden;
+      }
+
+      .native-file-thumb.is-document {
+        width: 82px;
+        height: 104px;
+        border-radius: 12px;
+        background: #e2e8f0;
+        padding: 5px;
+        box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
+      }
+
+      .native-file-thumb.is-loading {
+        color: transparent;
+      }
+
+      .native-file-thumb.is-loading::after {
+        content: '';
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(100, 116, 139, 0.28);
+        border-top-color: #ed1b2f;
+        border-radius: 999px;
+        animation: native-file-spin 700ms linear infinite;
+      }
+
+      .native-file-thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .native-file-thumb.is-document img {
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+        object-fit: contain;
+      }
+
+      @keyframes native-file-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .native-file-meta {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .native-file-name {
+        margin: 0;
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 850;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .native-file-detail {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.82rem;
+      }
+
+      .native-file-warning {
+        margin: -8px 0 0;
+        color: #b91c1c;
+        font-size: 0.86rem;
+        font-weight: 750;
+        line-height: 1.45;
+      }
+
+      .native-file-warning[hidden] {
+        display: none;
+      }
+
+      .native-file-remove {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 999px;
+        background: #fff;
+        color: #334155;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 800;
+        padding: 9px 12px;
+      }
+
+      .native-file-remove:hover,
+      .native-file-remove:focus-visible {
+        border-color: #ef4444;
+        color: #b91c1c;
+      }
+
+      .native-note,
+      .native-error {
+        border-radius: 18px;
+        padding: 14px 16px;
+        font-size: 0.92rem;
+        line-height: 1.6;
+      }
+
+      .native-note {
+        border: 1px solid rgba(237, 27, 47, 0.2);
+        background: rgba(237, 27, 47, 0.08);
+        color: #b91c1c;
+      }
+
+      .native-error {
+        border: 1px solid #fecaca;
+        background: #fff1f2;
+        color: #9f1239;
+      }
+
+      .native-review {
+        display: grid;
+        gap: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 18px;
+        background: #fff;
+        padding: 16px;
+        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+      }
+
+      .native-review[hidden] {
+        display: none;
+      }
+
+      .native-review-loader {
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 18px;
+        background: #fff;
+        padding: 22px;
+        color: #64748b;
+        font-size: 0.92rem;
+        font-weight: 750;
+        text-align: center;
+        box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
+      }
+
+      .native-review-loader[hidden] {
+        display: none;
+      }
+
+      .native-processing {
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+        border: 1px solid rgba(237, 27, 47, 0.18);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(237, 27, 47, 0.08), #fff 62%);
+        padding: 22px;
+        color: #475569;
+        font-size: 0.94rem;
+        font-weight: 750;
+        text-align: center;
+        box-shadow: 0 18px 48px rgba(237, 27, 47, 0.12);
+      }
+
+      .native-processing[hidden] {
+        display: none;
+      }
+
+      .native-review-spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid rgba(237, 27, 47, 0.16);
+        border-top-color: var(--magikit-red);
+        border-radius: 999px;
+        animation: native-spin 0.8s linear infinite;
+      }
+
+      @keyframes native-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .native-review h3 {
+        margin: 0;
+        color: #0f172a;
+        font-family: var(--font-display, sans-serif);
+        font-size: clamp(1.25rem, 3vw, 1.65rem);
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+      }
+
+      .native-review p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.92rem;
+        line-height: 1.6;
+      }
+
+      .native-processing strong {
+        color: #0f172a;
+        font-family: var(--font-display, sans-serif);
+        font-size: 1.15rem;
+        letter-spacing: -0.02em;
+      }
+
+      .native-processing span:last-child {
+        max-width: 42rem;
+        line-height: 1.65;
+      }
+
+      .native-review-list {
+        display: grid;
+        gap: 18px;
+        margin: 0;
+      }
+
+      @media (min-width: 760px) {
+        .native-review-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .native-review-row.is-wide {
+          grid-column: 1 / -1;
+        }
+      }
+
+      .native-review-row {
+        display: grid;
+        gap: 8px;
+      }
+
+      .native-review-row dt {
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 750;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+
+      .native-review-row dd {
+        margin: 0;
+        min-height: 52px;
+        border: 1px solid rgba(148, 163, 184, 0.38);
+        border-radius: 18px;
+        background: #fff;
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 750;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+        padding: 14px 16px;
+      }
+
+      .native-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .native-submit {
+        border: 0;
+        border-radius: 999px;
+        background: #ed1b2f;
+        color: #fff;
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        padding: 15px 22px;
+        text-transform: uppercase;
+        transition:
+          background 160ms ease,
+          transform 160ms ease;
+      }
+
+      .native-submit:hover,
+      .native-submit:focus-visible {
+        background: #c8102e;
+        transform: translateY(-1px);
+      }
+
+      .native-reset {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 999px;
+        background: #fff;
+        color: #334155;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 850;
+        letter-spacing: 0.04em;
+        padding: 14px 20px;
+        text-transform: uppercase;
+        transition:
+          border-color 160ms ease,
+          color 160ms ease,
+          transform 160ms ease;
+      }
+
+      .native-reset:hover,
+      .native-reset:focus-visible {
+        border-color: #ed1b2f;
+        color: #b91c1c;
+        transform: translateY(-1px);
+      }
+
+      .native-edit {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 999px;
+        background: #fff;
+        color: #334155;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.84rem;
+        font-weight: 850;
+        justify-self: start;
+        padding: 10px 14px;
+      }
+
+      .native-edit:hover,
+      .native-edit:focus-visible {
+        border-color: #ed1b2f;
+        color: #b91c1c;
+      }
+
+      .native-thanks h1 {
+        margin: 0;
+        color: #0f172a;
+        font-family: var(--font-display, sans-serif);
+        font-size: clamp(2.1rem, 7vw, 4.4rem);
+        line-height: 0.95;
+        letter-spacing: -0.055em;
+      }
+
+      .native-thanks p {
+        margin: 0;
+        color: #475569;
+        font-size: 1rem;
+        line-height: 1.8;
+      }
+    </style>
+  </head>
+  <body>
+    {canViewEmbed ? (
+      <main class="embed-shell">
+        {previewMode ? <div class="preview-chip">Local preview</div> : null}
+        {useNativeDisneyCapture && (
+          <section class="native-shell">
+            <div class="native-card">
+              {submitted ? (
+                <div class="native-thanks">
+                  <div class="native-label">Disney Creative Approval</div>
+                  <h1>You’re all set!</h1>
+                  <p>
+                    Thanks for using Trailblazer. Your asset will be reviewed and the Disney Creative Approval Team will be in touch with feedback or approval.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <header class="native-header">
+                    <div class="magikit-heading">
+                      <img
+                        class="magikit-header-image"
+                        src="/images/magikit-trailblazer-banner.svg"
+                        width="653"
+                        height="197"
+                        alt="Disney MagiKit Trailblazer"
+                        loading="eager"
+                      />
+                    </div>
+                    <p class="native-copy">
+                      Welcome to Trailblazer, our AI-powered Creative Approval agent.
+                    </p>
+                    <p class="native-copy">
+                      To get started, simply complete the form below to submit your marketing asset and we'll be in touch.
+                    </p>
+                  </header>
+
+                  <form class="native-form" action={submitPath} method="post" enctype="multipart/form-data" data-native-form>
+                    <input type="hidden" name="uid" value={embedSession.uid} />
+                    <input type="hidden" name="token" value={embedSession.token} />
+                    <input type="hidden" name="name" value={displayUserName} />
+                    <input type="hidden" name="email" value={displayUserEmail} />
+                    <input type="hidden" name="company" value={displayUserCompany} />
+
+                    {formErrorMessage ? <div class="native-error">{formErrorMessage}</div> : null}
+
+                    <section class="native-chat-step">
+                      <dl class="native-profile-summary" aria-label="Signed-in profile details">
+                        <div class="native-profile-item">
+                          <dt>User</dt>
+                          <dd>{displayUserName}</dd>
+                        </div>
+                        <div class="native-profile-item">
+                          <dt>Company</dt>
+                          <dd>{signedInCompany}</dd>
+                        </div>
+                      </dl>
+                    </section>
+
+                    <section class="native-chat-step">
+                      <div class="native-chat-question">
+                        <h2>Start with the property and content type:</h2>
+                        <p>This routes the submission to the right Disney property and channel checks.</p>
+                      </div>
+
+                      <div class="native-grid">
+                        <label class="native-field">
+                          Disney Destination
+                          <select class="native-select" name="disneyProperty" required>
+                            <option value="disneyland_paris" selected>Disneyland Paris</option>
+                            <option value="walt_disney_world_resort" disabled>Walt Disney World Resort</option>
+                            <option value="disney_cruise_line" disabled>Disney Cruise Line</option>
+                            <option value="multi_brand" disabled>Multi-brand</option>
+                          </select>
+                        </label>
+
+                        <label class="native-field">
+                          Content type
+                          <select class="native-select" name="creativeType" required>
+                            <option value="">Select a format</option>
+                            {creativeWorkTypes.map(([value, label]) => (
+                              <option value={value}>{label}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                    </section>
+
+                    <section class="native-chat-step">
+                      <div class="native-chat-question">
+                        <h2>When will this activity run?</h2>
+                        <p>These dates help check image expiry and campaign validity.</p>
+                      </div>
+
+                      <div class="native-grid">
+                        <label class="native-field">
+                          Activity start date
+                          <input class="native-input" type="date" name="activityStartDate" required />
+                        </label>
+
+                        <label class="native-field">
+                          Activity end date
+                          <input class="native-input" type="date" name="activityEndDate" required />
+                        </label>
+                      </div>
+                    </section>
+
+                    <section class="native-chat-step">
+                      <div class="native-chat-question">
+                        <h2>Upload your creative file:</h2>
+                        <p>Don't forget, only static files are accepted in PDF, DOCX, PNG, or JPEG format. Maximum upload size is 25MB and only one file will be accepted per submission.</p>
+                      </div>
+
+                      <label class="native-field native-upload-field">
+                        Upload creative work
+                        <span class="native-dropzone" data-dropzone>
+                          <input
+                            class="native-file"
+                            type="file"
+                            name="creative"
+                            accept=".pdf,.docx,.png,.jpg,.jpeg,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
+                            required
+                          />
+                          <span class="native-dropzone-content">
+                            <span class="native-dropzone-text">
+                              <span class="native-dropzone-title">Drag & drop files here, or click to select</span>
+                              <span class="native-dropzone-help">One PDF, DOCX, PNG, or JPEG up to 25MB</span>
+                            </span>
+                          </span>
+                        </span>
+                      </label>
+
+                      <p class="native-file-warning" data-file-warning hidden>
+                        Add one file only. Delete the current file if you need to replace it.
+                      </p>
+
+                      <div class="native-file-preview" data-file-preview hidden>
+                        <div class="native-file-thumb" data-file-thumb aria-hidden="true">FILE</div>
+                        <div class="native-file-meta">
+                          <p class="native-file-name" data-file-name></p>
+                          <p class="native-file-detail" data-file-detail></p>
+                        </div>
+                        <button class="native-file-remove" type="button" data-file-remove>
+                          Delete
+                        </button>
+                      </div>
+
+                      <div class="native-chat-question">
+                        <h2>Anything else we should know?</h2>
+                        <p>Add any notes here that we might need to help review your creative.</p>
+                      </div>
+
+                      <label class="native-field">
+                        Notes
+                        <textarea
+                          class="native-textarea"
+                          name="notes"
+                          maxlength="300"
+                          placeholder="Add comments or context for the brand team."
+                        ></textarea>
+                      </label>
+
+                      <div class="native-review-loader" data-review-loader hidden aria-live="polite">
+                        <span class="native-review-spinner" aria-hidden="true"></span>
+                        <span>Preparing your review. Nothing has been uploaded yet.</span>
+                      </div>
+
+                      <section class="native-review" data-review-panel hidden tabindex="-1" aria-live="polite">
+                        <div>
+                          <h3>Review before sending.</h3>
+                          <p>Your file has not been uploaded yet. Check the details below, edit anything you need, then choose Send for Assessment.</p>
+                        </div>
+	                        <dl class="native-review-list">
+	                          <div class="native-review-row">
+	                            <dt>Name</dt>
+	                            <dd>{displayUserName}</dd>
+	                          </div>
+	                          <div class="native-review-row">
+	                            <dt>Company</dt>
+	                            <dd>{signedInCompany}</dd>
+	                          </div>
+	                          <div class="native-review-row">
+	                            <dt>Disney Destination</dt>
+	                            <dd data-review-property></dd>
+                          </div>
+                          <div class="native-review-row">
+                            <dt>Content type</dt>
+                            <dd data-review-content-type></dd>
+                          </div>
+                          <div class="native-review-row">
+                            <dt>Activity start date</dt>
+                            <dd data-review-start-date></dd>
+                          </div>
+                          <div class="native-review-row">
+                            <dt>Activity end date</dt>
+                            <dd data-review-end-date></dd>
+                          </div>
+                          <div class="native-review-row is-wide">
+                            <dt>Creative file</dt>
+                            <dd data-review-file></dd>
+                          </div>
+                          <div class="native-review-row is-wide">
+                            <dt>Notes</dt>
+                            <dd data-review-notes></dd>
+                          </div>
+                        </dl>
+                        <button class="native-edit" type="button" data-edit-review>Edit details</button>
+                      </section>
+
+                      <div class="native-processing" data-processing-panel hidden aria-live="assertive" aria-atomic="true">
+                        <span class="native-review-spinner" aria-hidden="true"></span>
+                        <strong>Submitting to Trailblazer.</strong>
+                        <span>
+                          We're uploading your file and processing the submission against the brand rules.
+                          This can take a few moments.
+                        </span>
+                      </div>
+
+                      <div class="native-actions">
+                        <button class="native-submit" type="submit" data-submit-button>Review before sending</button>
+                        <button class="native-reset" type="reset" data-form-reset>Reset form</button>
+                      </div>
+                    </section>
+                  </form>
+                </>
+              )}
+            </div>
+          </section>
+        )}
+      </main>
+    ) : (
+      <main class="access-shell">
+        <section class="access-card" aria-live="polite">
+          <div class="access-label">Trailblazer</div>
+          <h1 class="access-title">Access link needed</h1>
+          <p class="access-copy">{accessErrorMessage}</p>
+        </section>
+      </main>
+    )}
+
+    {canViewEmbed && useNativeDisneyCapture && !submitted ? (
+      <script>
+        const dropzone = document.querySelector('[data-dropzone]');
+
+        if (dropzone instanceof HTMLElement) {
+          const form = document.querySelector('[data-native-form]');
+          const input = dropzone.querySelector('input[type="file"]');
+          const preview = document.querySelector('[data-file-preview]');
+          const thumb = document.querySelector('[data-file-thumb]');
+          const fileName = document.querySelector('[data-file-name]');
+          const fileDetail = document.querySelector('[data-file-detail]');
+          const fileWarning = document.querySelector('[data-file-warning]');
+          const removeButton = document.querySelector('[data-file-remove]');
+          const resetButton = document.querySelector('[data-form-reset]');
+          const submitButton = document.querySelector('[data-submit-button]');
+          const reviewLoader = document.querySelector('[data-review-loader]');
+          const reviewPanel = document.querySelector('[data-review-panel]');
+          const processingPanel = document.querySelector('[data-processing-panel]');
+          const editReviewButton = document.querySelector('[data-edit-review]');
+          const reviewProperty = document.querySelector('[data-review-property]');
+          const reviewContentType = document.querySelector('[data-review-content-type]');
+          const reviewStartDate = document.querySelector('[data-review-start-date]');
+          const reviewEndDate = document.querySelector('[data-review-end-date]');
+          const reviewNotes = document.querySelector('[data-review-notes]');
+          const reviewFile = document.querySelector('[data-review-file]');
+          let imagePreviewUrl = '';
+          let previewToken = 0;
+          let pdfJsPromise: Promise<any> | undefined;
+          let reviewReady = false;
+          let reviewTimer = 0;
+          let isSubmitting = false;
+          const SUBMISSION_MESSAGE_DELAY_MS = 3000;
+          const PDF_THUMBNAIL_MAX_BYTES = 10 * 1024 * 1024;
+          const PDF_THUMBNAIL_TIMEOUT_MS = 12000;
+
+          const formatFileSize = (bytes: number) => {
+            if (!Number.isFinite(bytes) || bytes <= 0) return '';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+            const value = bytes / 1024 ** exponent;
+            return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+          };
+
+          const clearImagePreviewUrl = () => {
+            if (!imagePreviewUrl) return;
+            URL.revokeObjectURL(imagePreviewUrl);
+            imagePreviewUrl = '';
+          };
+
+          const setFileWarning = (message = '') => {
+            if (!(fileWarning instanceof HTMLElement)) return;
+            fileWarning.textContent = message;
+            fileWarning.hidden = !message;
+          };
+
+          const setReviewText = (node: Element | null, value: string) => {
+            if (node instanceof HTMLElement) node.textContent = value;
+          };
+
+          const getFieldValue = (name: string) => {
+            if (!(form instanceof HTMLFormElement)) return '';
+            const field = form.elements.namedItem(name);
+            if (
+              field instanceof HTMLInputElement ||
+              field instanceof HTMLSelectElement ||
+              field instanceof HTMLTextAreaElement
+            ) {
+              return field.value.trim();
+            }
+
+            return '';
+          };
+
+          const getSelectedOptionText = (name: string) => {
+            if (!(form instanceof HTMLFormElement)) return '';
+            const field = form.elements.namedItem(name);
+            if (!(field instanceof HTMLSelectElement)) return '';
+            return field.selectedOptions[0]?.textContent?.trim() || field.value;
+          };
+
+          const formatDisplayDate = (value: string) => {
+            if (!value) return '';
+            const date = new Date(`${value}T00:00:00`);
+            if (Number.isNaN(date.valueOf())) return value;
+            return new Intl.DateTimeFormat('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            }).format(date);
+          };
+
+          const resetReview = () => {
+            if (reviewTimer) {
+              window.clearTimeout(reviewTimer);
+              reviewTimer = 0;
+            }
+            reviewReady = false;
+            if (reviewLoader instanceof HTMLElement) reviewLoader.hidden = true;
+            if (reviewPanel instanceof HTMLElement) reviewPanel.hidden = true;
+            if (processingPanel instanceof HTMLElement) processingPanel.hidden = true;
+            if (submitButton instanceof HTMLButtonElement) {
+              submitButton.disabled = false;
+              submitButton.textContent = 'Review before sending';
+            }
+            if (resetButton instanceof HTMLButtonElement) resetButton.disabled = false;
+            if (editReviewButton instanceof HTMLButtonElement) editReviewButton.disabled = false;
+          };
+
+          const showReview = () => {
+            const selectedFile = input instanceof HTMLInputElement ? input.files?.[0] : null;
+            const startDate = formatDisplayDate(getFieldValue('activityStartDate'));
+            const endDate = formatDisplayDate(getFieldValue('activityEndDate'));
+            const notes = getFieldValue('notes');
+
+            setReviewText(reviewProperty, getSelectedOptionText('disneyProperty'));
+            setReviewText(reviewContentType, getSelectedOptionText('creativeType'));
+            setReviewText(reviewStartDate, startDate);
+            setReviewText(reviewEndDate, endDate);
+            setReviewText(reviewNotes, notes);
+            setReviewText(
+              reviewFile,
+              selectedFile ? `${selectedFile.name} (${formatFileSize(selectedFile.size)})` : '',
+            );
+
+            reviewReady = true;
+            if (reviewLoader instanceof HTMLElement) reviewLoader.hidden = true;
+            if (reviewPanel instanceof HTMLElement) {
+              reviewPanel.hidden = false;
+              reviewPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              reviewPanel.focus({ preventScroll: true });
+            }
+            if (submitButton instanceof HTMLButtonElement) submitButton.textContent = 'Send for Assessment';
+          };
+
+          const prepareReview = () => {
+            if (reviewTimer) window.clearTimeout(reviewTimer);
+            if (reviewPanel instanceof HTMLElement) reviewPanel.hidden = true;
+            if (reviewLoader instanceof HTMLElement) {
+              reviewLoader.hidden = false;
+              reviewLoader.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (submitButton instanceof HTMLButtonElement) {
+              submitButton.disabled = true;
+              submitButton.textContent = 'Preparing review...';
+            }
+
+            reviewTimer = window.setTimeout(() => {
+              reviewTimer = 0;
+              if (submitButton instanceof HTMLButtonElement) submitButton.disabled = false;
+              showReview();
+            }, 2000);
+          };
+
+          const showProcessing = () => {
+            isSubmitting = true;
+            if (form instanceof HTMLFormElement) form.setAttribute('aria-busy', 'true');
+            if (reviewLoader instanceof HTMLElement) reviewLoader.hidden = true;
+            if (processingPanel instanceof HTMLElement) {
+              processingPanel.hidden = false;
+              processingPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (submitButton instanceof HTMLButtonElement) {
+              submitButton.disabled = true;
+              submitButton.textContent = 'Submitting...';
+            }
+            if (resetButton instanceof HTMLButtonElement) resetButton.disabled = true;
+            if (editReviewButton instanceof HTMLButtonElement) editReviewButton.disabled = true;
+          };
+
+          const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> =>
+            Promise.race([
+              promise,
+              new Promise<never>((_, reject) => {
+                window.setTimeout(() => reject(new Error('PDF thumbnail timed out.')), timeoutMs);
+              }),
+            ]);
+
+          const getPdfJs = async () => {
+            if (!pdfJsPromise) {
+              pdfJsPromise = Promise.all([
+                import('pdfjs-dist/build/pdf.mjs'),
+                import('pdfjs-dist/build/pdf.worker.mjs?url'),
+              ]).then(([pdfjsLib, workerModule]) => {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default;
+                return pdfjsLib;
+              });
+            }
+
+            return pdfJsPromise;
+          };
+
+          const renderPdfThumbnail = async (file: File, token: number): Promise<string | null> => {
+            const pdfjsLib = await getPdfJs();
+            const data = await file.arrayBuffer();
+            let pdf: any;
+
+            try {
+              pdf = await pdfjsLib.getDocument({ data }).promise;
+              const page = await pdf.getPage(1);
+              const viewport = page.getViewport({ scale: 1 });
+              const scale = Math.min(2, 420 / viewport.width);
+              const scaledViewport = page.getViewport({ scale });
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d', { alpha: false });
+
+              if (!context) return null;
+
+              canvas.width = Math.ceil(scaledViewport.width);
+              canvas.height = Math.ceil(scaledViewport.height);
+              context.fillStyle = '#fff';
+              context.fillRect(0, 0, canvas.width, canvas.height);
+              await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+              page.cleanup();
+
+              if (token !== previewToken) return null;
+
+              return new Promise<string | null>((resolve) => {
+                canvas.toBlob((blob) => {
+                  resolve(blob ? URL.createObjectURL(blob) : null);
+                }, 'image/png');
+              });
+            } finally {
+              await pdf?.destroy?.();
+            }
+          };
+
+          const resetPreview = () => {
+            previewToken += 1;
+            clearImagePreviewUrl();
+            setFileWarning();
+            resetReview();
+            dropzone.classList.remove('has-file');
+            if (preview instanceof HTMLElement) {
+              preview.hidden = true;
+              preview.classList.remove('is-visible');
+            }
+            if (thumb instanceof HTMLElement) {
+              thumb.replaceChildren('FILE');
+              thumb.className = 'native-file-thumb';
+            }
+            if (fileName) fileName.textContent = '';
+            if (fileDetail) fileDetail.textContent = '';
+          };
+
+          const setPreview = async (file: File | null | undefined) => {
+            const token = previewToken + 1;
+            previewToken = token;
+            resetReview();
+
+            if (!file) {
+              resetPreview();
+              return;
+            }
+
+            clearImagePreviewUrl();
+            setFileWarning();
+            dropzone.classList.add('has-file');
+            if (fileName) fileName.textContent = file.name;
+            if (fileDetail) fileDetail.textContent = formatFileSize(file.size);
+
+            if (preview instanceof HTMLElement) {
+              preview.hidden = false;
+              preview.classList.add('is-visible');
+            }
+
+            if (thumb instanceof HTMLElement) {
+              thumb.replaceChildren('FILE');
+              thumb.className = 'native-file-thumb';
+
+              const showThumbnailImage = (
+                url: string,
+                mode: 'image' | 'document',
+                fallbackLabel: string,
+              ) => {
+                const image = document.createElement('img');
+                image.alt = '';
+                image.decoding = 'async';
+                thumb.className = mode === 'document'
+                  ? 'native-file-thumb is-document is-loading'
+                  : 'native-file-thumb is-loading';
+                thumb.replaceChildren(image);
+                image.addEventListener('load', () => {
+                  if (token === previewToken) thumb.classList.remove('is-loading');
+                }, { once: true });
+                image.addEventListener('error', () => {
+                  if (token !== previewToken) return;
+                  thumb.className = mode === 'document' ? 'native-file-thumb is-document' : 'native-file-thumb';
+                  thumb.replaceChildren(fallbackLabel);
+                }, { once: true });
+                image.src = url;
+              };
+
+              const canShowImageThumbnail =
+                file.type.startsWith('image/') || /\.(png|jpe?g)$/i.test(file.name);
+              const canShowPdfThumbnail =
+                file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+              if (canShowImageThumbnail) {
+                imagePreviewUrl = URL.createObjectURL(file);
+                showThumbnailImage(imagePreviewUrl, 'image', 'IMG');
+              } else if (canShowPdfThumbnail) {
+                thumb.className = 'native-file-thumb is-document';
+                thumb.textContent = 'PDF';
+
+                if (file.size > PDF_THUMBNAIL_MAX_BYTES) {
+                  if (fileDetail) fileDetail.textContent = `${formatFileSize(file.size)} - PDF preview skipped for larger files`;
+                  return;
+                }
+
+                thumb.classList.add('is-loading');
+                if (fileDetail) fileDetail.textContent = `${formatFileSize(file.size)} - creating PDF thumbnail`;
+
+                try {
+                  const thumbnailUrl = await withTimeout(
+                    renderPdfThumbnail(file, token),
+                    PDF_THUMBNAIL_TIMEOUT_MS,
+                  );
+                  if (!thumbnailUrl) return;
+                  if (token !== previewToken) {
+                    URL.revokeObjectURL(thumbnailUrl);
+                    return;
+                  }
+
+                  clearImagePreviewUrl();
+                  imagePreviewUrl = thumbnailUrl;
+                  showThumbnailImage(imagePreviewUrl, 'document', 'PDF');
+                  if (fileDetail) fileDetail.textContent = formatFileSize(file.size);
+                } catch {
+                  if (token === previewToken) {
+                    thumb.className = 'native-file-thumb is-document';
+                    thumb.textContent = 'PDF';
+                    if (fileDetail) fileDetail.textContent = `${formatFileSize(file.size)} - preview unavailable`;
+                  }
+                }
+              } else {
+                const extension = file.name.split('.').pop()?.slice(0, 4).toUpperCase() || 'FILE';
+                thumb.textContent = extension;
+              }
+            }
+          };
+
+          dropzone.addEventListener('dragenter', (event) => {
+            event.preventDefault();
+            dropzone.classList.add('is-dragging');
+          });
+
+          dropzone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropzone.classList.add('is-dragging');
+          });
+
+          dropzone.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            dropzone.classList.remove('is-dragging');
+          });
+
+          dropzone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropzone.classList.remove('is-dragging');
+
+            const files = event.dataTransfer?.files;
+            if (files && files.length > 1) {
+              resetReview();
+              setFileWarning('Add one file only. Delete the current file if you need to replace it.');
+              return;
+            }
+
+            const file = files?.[0];
+            if (!(input instanceof HTMLInputElement) || !file) return;
+
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            input.files = transfer.files;
+            void setPreview(file);
+          });
+
+          input?.addEventListener('change', () => {
+            void setPreview(input instanceof HTMLInputElement ? input.files?.[0] : null);
+          });
+
+          removeButton?.addEventListener('click', () => {
+            if (input instanceof HTMLInputElement) input.value = '';
+            resetPreview();
+          });
+
+          resetButton?.addEventListener('click', () => {
+            window.requestAnimationFrame(resetPreview);
+          });
+
+          editReviewButton?.addEventListener('click', () => {
+            resetReview();
+            const firstVisibleField = form instanceof HTMLFormElement
+              ? form.querySelector('select, input:not([type="hidden"])')
+              : null;
+            if (firstVisibleField instanceof HTMLElement) {
+              firstVisibleField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              firstVisibleField.focus({ preventScroll: true });
+            }
+          });
+
+          form?.addEventListener('input', (event) => {
+            if (isSubmitting) return;
+            if (event.target instanceof HTMLInputElement && event.target.type === 'hidden') return;
+            if (reviewReady) resetReview();
+          });
+
+          form?.addEventListener('change', (event) => {
+            if (isSubmitting) return;
+            if (event.target instanceof HTMLInputElement && event.target.type === 'hidden') return;
+            if (reviewReady) resetReview();
+          });
+
+          form?.addEventListener('submit', (event) => {
+            if (!(form instanceof HTMLFormElement)) return;
+            if (isSubmitting) return;
+            if (reviewReady) {
+              event.preventDefault();
+              showProcessing();
+              window.requestAnimationFrame(() => {
+                window.setTimeout(() => form.submit(), SUBMISSION_MESSAGE_DELAY_MS);
+              });
+              return;
+            }
+
+            event.preventDefault();
+            if (!form.reportValidity()) return;
+            prepareReview();
+          });
+        }
+      </script>
+    ) : null}
+  </body>
+</html>

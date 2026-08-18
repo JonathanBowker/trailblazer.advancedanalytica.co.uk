@@ -7,30 +7,33 @@ Local repository path: `/Users/jbb/Projects/disney-trailblazer-form-page`
 ## Purpose
 
 This app isolates the protected upload experience from the main
-`advancedanalytica.co.uk` site while continuing to use the same Supabase Auth
-project and the same downstream Disney compliance pipeline.
+`advancedanalytica.co.uk` site while continuing to use the same downstream
+Disney compliance pipeline.
 
 ## Domain
 
 - Production: `https://trailblazer.advancedanalytica.co.uk`
 - Local: `http://localhost:4321`
 
-## Shared auth model
+## Umbraco iframe handoff
 
-This app is designed to use the same Supabase project as the main
-`advancedanalytica.co.uk` website, so user provisioning and role management can
-stay on the existing admin surface.
+The Umbraco portal should point its iframe at:
 
-`page_viewer` users can request security codes and access the protected Trailblazer
-form without gaining access to the main portal.
+`https://trailblazer.advancedanalytica.co.uk/forms/brand-readiness-assessment/embed?uid=[UserId]&token=[GUID]`
 
-## Required Supabase redirect URLs
+The embed route validates `token` against the server-side GUID batch in
+`src/data/trailblazer-valid-guids.json`. `uid` is stored with the submission as
+the Umbraco user id.
 
-Add these to the Supabase Auth redirect allow list before go-live:
+Optional query parameters are also supported and will be carried through to the
+submission metadata:
 
-- `https://trailblazer.advancedanalytica.co.uk/**`
-- `http://localhost:4321/**`
-- `http://127.0.0.1:4321/**`
+- `name`
+- `email`
+- `company`
+
+The legacy Supabase OTP page is still present in the codebase, but Umbraco
+should use the embed route above.
 
 ## DigitalOcean
 

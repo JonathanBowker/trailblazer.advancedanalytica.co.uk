@@ -862,6 +862,7 @@ async function runPrefectCompliancePipeline(
   endpoint: string,
 ): Promise<OrchestrationStage> {
   const apiKey = params.getEnvValue('PREFECT_TRIGGER_API_KEY') || params.getEnvValue('AA_TRIGGER_API_KEY');
+  const hasResultRecipientEmail = Boolean(manifestText(params.manifest, ['result_recipient', 'email']));
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -887,9 +888,9 @@ async function runPrefectCompliancePipeline(
             generate_image_assessment_export: true,
             publish_review_export: false,
             deliver_submission_received_email: true,
-            deliver_result_email: true,
+            deliver_result_email: hasResultRecipientEmail,
             google_sheets_create_per_document: true,
-            google_sheets_share_result_recipient: true,
+            google_sheets_share_result_recipient: hasResultRecipientEmail,
             google_sheets_send_share_notification: false,
           }
         : buildInlinePrefectPayload(params, buffer);
@@ -948,6 +949,7 @@ async function runPrefectCompliancePipeline(
 function buildInlinePrefectPayload(params: OrchestrationParams, buffer: Buffer) {
   const documentBase64 = buffer.toString('base64');
   if (Buffer.byteLength(documentBase64, 'utf8') > 400_000) return null;
+  const hasResultRecipientEmail = Boolean(manifestText(params.manifest, ['result_recipient', 'email']));
 
   return {
     manifest: params.manifest,
@@ -963,9 +965,9 @@ function buildInlinePrefectPayload(params: OrchestrationParams, buffer: Buffer) 
     generate_image_assessment_export: true,
     publish_review_export: false,
     deliver_submission_received_email: true,
-    deliver_result_email: true,
+    deliver_result_email: hasResultRecipientEmail,
     google_sheets_create_per_document: true,
-    google_sheets_share_result_recipient: true,
+    google_sheets_share_result_recipient: hasResultRecipientEmail,
     google_sheets_send_share_notification: false,
   };
 }
