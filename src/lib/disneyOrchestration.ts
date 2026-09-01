@@ -1027,6 +1027,10 @@ async function uploadSubmittedArtifactForPrefect(
         'company-name': manifestText(params.manifest, ['partner', 'name']),
         'person-name': manifestText(params.manifest, ['result_recipient', 'display_name']),
         'person-email': manifestText(params.manifest, ['result_recipient', 'email']).toLowerCase(),
+        'asset-type': manifestText(params.manifest, ['asset_type']),
+        'declared-content-type': manifestText(params.manifest, ['declared_content_type']),
+        'distribution-channel': manifestText(params.manifest, ['channel']),
+        'content-composition': manifestText(params.manifest, ['content_composition']),
       },
     }),
   );

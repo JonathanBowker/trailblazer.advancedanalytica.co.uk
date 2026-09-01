@@ -9,6 +9,13 @@ import {
   trailblazerEmbedFormPath,
   verifyTrailblazerEmbedSessionFromCookie,
 } from '../../../lib/trailblazerEmbedAuth';
+import {
+  getDisneyAssetType,
+  getDisneyChannel,
+  getDisneyComposition,
+  getDisneyDeclaration,
+  getDisneyDestination,
+} from '../../../data/disneySubmissionTaxonomy';
 
 export const prerender = false;
 
@@ -30,28 +37,6 @@ const allowedMimeTypes = new Set([
   'image/png',
   'image/jpeg',
 ]);
-
-const creativeTypeLabels: Record<string, string> = {
-  social_media_post: 'Social media post',
-  social_media_ugc: 'Social media UGC',
-  email_campaign: 'Email campaign',
-  newsletter: 'Newsletter',
-  brochure_print: 'Brochure / print',
-  banner_display_ad: 'Banner / display ad',
-  blog_vlog: 'Blog / Vlog',
-  other: 'Other',
-};
-
-const creativeTypeChannels: Record<string, string> = {
-  social_media_post: 'social',
-  social_media_ugc: 'social',
-  email_campaign: 'email',
-  newsletter: 'email',
-  brochure_print: 'brochure',
-  banner_display_ad: 'web',
-  blog_vlog: 'web',
-  other: 'other',
-};
 
 function cleanText(value: FormDataEntryValue | null) {
   return String(value || '').trim();
@@ -142,6 +127,12 @@ function isValidDateField(value: string) {
   return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
 }
 
+function declarationToBoolean(value: string) {
+  if (value === 'yes') return true;
+  if (value === 'no') return false;
+  return null;
+}
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   if (!requestOriginIsAllowed(request)) return redirectToForm({ error: 'origin' });
 
@@ -207,11 +198,36 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return redirectToForm({ error: 'file_type' }, embedSession);
   }
 
-  const creativeType = cleanText(formData.get('creativeType'));
-  if (!creativeTypeLabels[creativeType]) return redirectToForm({ error: 'invalid' }, embedSession);
+  const assetTypeValue = cleanText(formData.get('assetType')) || cleanText(formData.get('creativeType'));
+  const assetType = getDisneyAssetType(assetTypeValue);
+  if (!assetType) return redirectToForm({ error: 'invalid' }, embedSession);
+
+  const channelValue = cleanText(formData.get('distributionChannel')) || assetType.defaultChannel;
+  const channel = getDisneyChannel(channelValue);
+  if (!channel || !(assetType.channels as readonly string[]).includes(channel.value)) {
+    return redirectToForm({ error: 'invalid' }, embedSession);
+  }
+
+  const compositionValue = cleanText(formData.get('contentComposition')) || assetType.defaultComposition;
+  const composition = getDisneyComposition(compositionValue);
+  if (!composition) return redirectToForm({ error: 'invalid' }, embedSession);
+
+  const containsOfferPricingValue =
+    cleanText(formData.get('containsOfferPricing')) || assetType.defaultContainsOfferPricing;
+  const containsDisneyCharactersValue =
+    cleanText(formData.get('containsDisneyCharacters')) || assetType.defaultContainsDisneyCharacters;
+  const containsPartnerBrandingValue =
+    cleanText(formData.get('containsPartnerBranding')) || assetType.defaultContainsPartnerBranding;
+  const containsOfferPricing = getDisneyDeclaration(containsOfferPricingValue);
+  const containsDisneyCharacters = getDisneyDeclaration(containsDisneyCharactersValue);
+  const containsPartnerBranding = getDisneyDeclaration(containsPartnerBrandingValue);
+  if (!containsOfferPricing || !containsDisneyCharacters || !containsPartnerBranding) {
+    return redirectToForm({ error: 'invalid' }, embedSession);
+  }
 
   const disneyProperty = cleanText(formData.get('disneyProperty')) || 'disneyland_paris';
-  if (disneyProperty !== 'disneyland_paris') return redirectToForm({ error: 'invalid' }, embedSession);
+  const disneyDestination = getDisneyDestination(disneyProperty);
+  if (!disneyDestination || disneyDestination.disabled) return redirectToForm({ error: 'invalid' }, embedSession);
 
   const activityStartDate = cleanText(formData.get('activityStartDate'));
   const activityEndDate = cleanText(formData.get('activityEndDate'));
@@ -253,9 +269,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       size_bytes: creative.size,
       sha256,
     },
-    channel: creativeTypeChannels[creativeType],
+    submitted_at: now.toISOString(),
+    channel: channel.value,
+    content_type: assetType.declaredContentType,
+    declared_content_type: assetType.declaredContentType,
+    asset_type: assetType.value,
+    creative_type: assetType.value,
+    review_profile: assetType.reviewProfile,
+    rule_profile: assetType.ruleProfile,
+    content_composition: composition.value,
+    declared_attributes: {
+      contains_offer_pricing: declarationToBoolean(containsOfferPricing.value),
+      contains_disney_characters: declarationToBoolean(containsDisneyCharacters.value),
+      contains_partner_branding: declarationToBoolean(containsPartnerBranding.value),
+      contains_offer_pricing_label: containsOfferPricing.label,
+      contains_disney_characters_label: containsDisneyCharacters.label,
+      contains_partner_branding_label: containsPartnerBranding.label,
+    },
     market: 'UK & Ireland',
-    intended_destinations: ['disneyland_paris'],
+    intended_destinations: [disneyDestination.manifestDestination],
     publication_date: activityStartDate,
     campaign_end_date: activityEndDate,
     disney_template_used: false,
@@ -275,14 +307,39 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       source: submissionUser.source,
     },
     disney_property: {
-      value: disneyProperty,
-      label: 'Disneyland Paris',
-      manifest_destination: 'disneyland_paris',
+      value: disneyDestination.value,
+      label: disneyDestination.label,
+      manifest_destination: disneyDestination.manifestDestination,
     },
     creative_type: {
-      value: creativeType,
-      label: creativeTypeLabels[creativeType],
-      manifest_channel: creativeTypeChannels[creativeType],
+      value: assetType.value,
+      label: assetType.label,
+      manifest_channel: channel.value,
+      declared_content_type: assetType.declaredContentType,
+      review_profile: assetType.reviewProfile,
+      rule_profile: assetType.ruleProfile,
+    },
+    distribution_channel: {
+      value: channel.value,
+      label: channel.label,
+    },
+    content_composition: {
+      value: composition.value,
+      label: composition.label,
+    },
+    declared_attributes: {
+      contains_offer_pricing: {
+        value: containsOfferPricing.value,
+        label: containsOfferPricing.label,
+      },
+      contains_disney_characters: {
+        value: containsDisneyCharacters.value,
+        label: containsDisneyCharacters.label,
+      },
+      contains_partner_branding: {
+        value: containsPartnerBranding.value,
+        label: containsPartnerBranding.label,
+      },
     },
     activity: {
       start_date: activityStartDate,
