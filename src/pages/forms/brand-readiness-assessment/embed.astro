@@ -8,9 +8,6 @@ import {
 import baseThemeCss from '../../../themes/base.css?raw';
 import {
   disneyAssetTypes,
-  disneyChannelOptions,
-  disneyCompositionOptions,
-  disneyDeclarationOptions,
   disneyDestinationOptions,
 } from '../../../data/disneySubmissionTaxonomy';
 
@@ -1061,55 +1058,6 @@ const accessErrorMessage =
                         </label>
                       </div>
 
-                      <div class="native-grid native-grid-three">
-                        <label class="native-field">
-                          Channel
-                          <select class="native-select" name="distributionChannel" required data-distribution-channel>
-                            <option value="">Select an asset type first</option>
-                            {disneyChannelOptions.map((option) => (
-                              <option value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label class="native-field">
-                          Content composition
-                          <select class="native-select" name="contentComposition" required data-content-composition>
-                            {disneyCompositionOptions.map((option) => (
-                              <option value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label class="native-field">
-                          Contains offer or pricing?
-                          <select class="native-select" name="containsOfferPricing" required data-contains-offer-pricing>
-                            {disneyDeclarationOptions.map((option) => (
-                              <option value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-
-                      <div class="native-grid">
-                        <label class="native-field">
-                          Contains Disney characters?
-                          <select class="native-select" name="containsDisneyCharacters" required data-contains-disney-characters>
-                            {disneyDeclarationOptions.map((option) => (
-                              <option value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label class="native-field">
-                          Contains partner branding?
-                          <select class="native-select" name="containsPartnerBranding" required data-contains-partner-branding>
-                            {disneyDeclarationOptions.map((option) => (
-                              <option value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
                     </section>
 
                     <section class="native-chat-step">
@@ -1214,26 +1162,6 @@ const accessErrorMessage =
                             <dd data-review-content-type></dd>
                           </div>
                           <div class="native-review-row">
-                            <dt>Channel</dt>
-                            <dd data-review-channel></dd>
-                          </div>
-                          <div class="native-review-row">
-                            <dt>Composition</dt>
-                            <dd data-review-composition></dd>
-                          </div>
-                          <div class="native-review-row">
-                            <dt>Contains offer or pricing?</dt>
-                            <dd data-review-offer-pricing></dd>
-                          </div>
-                          <div class="native-review-row">
-                            <dt>Contains Disney characters?</dt>
-                            <dd data-review-disney-characters></dd>
-                          </div>
-                          <div class="native-review-row">
-                            <dt>Contains partner branding?</dt>
-                            <dd data-review-partner-branding></dd>
-                          </div>
-                          <div class="native-review-row">
                             <dt>Activity start date</dt>
                             <dd data-review-start-date></dd>
                           </div>
@@ -1285,19 +1213,12 @@ const accessErrorMessage =
     )}
 
     {canViewEmbed && useNativeDisneyCapture && !submitted ? (
-      <script is:inline id="asset-type-config" type="application/json" set:html={JSON.stringify(disneyAssetTypes)}></script>
       <script>
         const dropzone = document.querySelector('[data-dropzone]');
 
         if (dropzone instanceof HTMLElement) {
           const form = document.querySelector('[data-native-form]');
           const input = dropzone.querySelector('input[type="file"]');
-          const assetTypeSelect = document.querySelector('[data-asset-type]');
-          const channelSelect = document.querySelector('[data-distribution-channel]');
-          const compositionSelect = document.querySelector('[data-content-composition]');
-          const containsOfferPricingSelect = document.querySelector('[data-contains-offer-pricing]');
-          const containsDisneyCharactersSelect = document.querySelector('[data-contains-disney-characters]');
-          const containsPartnerBrandingSelect = document.querySelector('[data-contains-partner-branding]');
           const preview = document.querySelector('[data-file-preview]');
           const thumb = document.querySelector('[data-file-thumb]');
           const fileName = document.querySelector('[data-file-name]');
@@ -1312,11 +1233,6 @@ const accessErrorMessage =
           const editReviewButton = document.querySelector('[data-edit-review]');
           const reviewProperty = document.querySelector('[data-review-property]');
           const reviewContentType = document.querySelector('[data-review-content-type]');
-          const reviewChannel = document.querySelector('[data-review-channel]');
-          const reviewComposition = document.querySelector('[data-review-composition]');
-          const reviewOfferPricing = document.querySelector('[data-review-offer-pricing]');
-          const reviewDisneyCharacters = document.querySelector('[data-review-disney-characters]');
-          const reviewPartnerBranding = document.querySelector('[data-review-partner-branding]');
           const reviewStartDate = document.querySelector('[data-review-start-date]');
           const reviewEndDate = document.querySelector('[data-review-end-date]');
           const reviewNotes = document.querySelector('[data-review-notes]');
@@ -1330,19 +1246,6 @@ const accessErrorMessage =
           const SUBMISSION_MESSAGE_DELAY_MS = 3000;
           const PDF_THUMBNAIL_MAX_BYTES = 10 * 1024 * 1024;
           const PDF_THUMBNAIL_TIMEOUT_MS = 12000;
-          type AssetTypeOption = {
-            value: string;
-            channels: string[];
-            defaultChannel: string;
-            defaultComposition: string;
-            defaultContainsOfferPricing: string;
-            defaultContainsDisneyCharacters: string;
-            defaultContainsPartnerBranding: string;
-          };
-          const assetTypeConfig = document.getElementById('asset-type-config');
-          const assetTypeOptions: AssetTypeOption[] = assetTypeConfig?.textContent
-            ? JSON.parse(assetTypeConfig.textContent)
-            : [];
 
           const formatFileSize = (bytes: number) => {
             if (!Number.isFinite(bytes) || bytes <= 0) return '';
@@ -1389,40 +1292,6 @@ const accessErrorMessage =
             return field.selectedOptions[0]?.textContent?.trim() || field.value;
           };
 
-          const setSelectValue = (selector: Element | null, value: string) => {
-            if (selector instanceof HTMLSelectElement) selector.value = value;
-          };
-
-          const applyAssetDefaults = () => {
-            if (!(assetTypeSelect instanceof HTMLSelectElement)) return;
-            const assetType = assetTypeOptions.find((option) => option.value === assetTypeSelect.value);
-            const allowedChannels = new Set(assetType?.channels || []);
-
-            if (channelSelect instanceof HTMLSelectElement) {
-              channelSelect.disabled = !assetType;
-              Array.from(channelSelect.options).forEach((option) => {
-                if (!option.value) {
-                  option.disabled = false;
-                  option.textContent = assetType ? 'Select a channel' : 'Select an asset type first';
-                  return;
-                }
-                option.disabled = Boolean(assetType) && !allowedChannels.has(option.value);
-              });
-
-              if (!assetType) {
-                channelSelect.value = '';
-              } else if (!allowedChannels.has(channelSelect.value)) {
-                channelSelect.value = assetType.defaultChannel;
-              }
-            }
-
-            if (!assetType) return;
-            setSelectValue(compositionSelect, assetType.defaultComposition);
-            setSelectValue(containsOfferPricingSelect, assetType.defaultContainsOfferPricing);
-            setSelectValue(containsDisneyCharactersSelect, assetType.defaultContainsDisneyCharacters);
-            setSelectValue(containsPartnerBrandingSelect, assetType.defaultContainsPartnerBranding);
-          };
-
           const formatDisplayDate = (value: string) => {
             if (!value) return '';
             const date = new Date(`${value}T00:00:00`);
@@ -1459,11 +1328,6 @@ const accessErrorMessage =
 
             setReviewText(reviewProperty, getSelectedOptionText('disneyProperty'));
             setReviewText(reviewContentType, getSelectedOptionText('assetType'));
-            setReviewText(reviewChannel, getSelectedOptionText('distributionChannel'));
-            setReviewText(reviewComposition, getSelectedOptionText('contentComposition'));
-            setReviewText(reviewOfferPricing, getSelectedOptionText('containsOfferPricing'));
-            setReviewText(reviewDisneyCharacters, getSelectedOptionText('containsDisneyCharacters'));
-            setReviewText(reviewPartnerBranding, getSelectedOptionText('containsPartnerBranding'));
             setReviewText(reviewStartDate, startDate);
             setReviewText(reviewEndDate, endDate);
             setReviewText(reviewNotes, notes);
@@ -1728,8 +1592,6 @@ const accessErrorMessage =
             void setPreview(input instanceof HTMLInputElement ? input.files?.[0] : null);
           });
 
-          assetTypeSelect?.addEventListener('change', applyAssetDefaults);
-
           removeButton?.addEventListener('click', () => {
             if (input instanceof HTMLInputElement) input.value = '';
             resetPreview();
@@ -1778,8 +1640,6 @@ const accessErrorMessage =
             if (!form.reportValidity()) return;
             prepareReview();
           });
-
-          applyAssetDefaults();
         }
       </script>
     ) : null}
