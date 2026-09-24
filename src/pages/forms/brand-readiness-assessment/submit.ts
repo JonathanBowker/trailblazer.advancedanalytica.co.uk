@@ -19,7 +19,7 @@ import {
 
 export const prerender = false;
 
-const maxUploadBytes = 5 * 1024 * 1024;
+const maxUploadBytes = 25 * 1024 * 1024;
 const defaultInboxDir = '/tmp/trailblazer-submissions';
 const allowedExtensions = new Set(['pdf', 'docx', 'png', 'jpg', 'jpeg']);
 const allowedSubmitOrigins = new Set([

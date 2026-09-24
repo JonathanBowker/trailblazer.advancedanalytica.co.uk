@@ -51,7 +51,7 @@ const formErrorMessage =
   formError === 'file_type'
     ? 'Upload a PDF, DOCX, PNG, or JPEG file.'
     : formError === 'file_size'
-      ? 'The file is too large. Upload a file under 5MB.'
+      ? 'The file is too large. Upload a file under 25MB.'
       : formError === 'missing_file'
         ? 'Choose a creative file to upload.'
         : formError === 'pipeline'
@@ -1082,7 +1082,7 @@ const accessErrorMessage =
                     <section class="native-chat-step">
                       <div class="native-chat-question">
                         <h2>Upload your creative file:</h2>
-                        <p>Don't forget, only static files are accepted in PDF, DOCX, PNG, or JPEG format. Maximum upload size is 5MB and only one file will be accepted per submission.</p>
+                        <p>Don't forget, only static files are accepted in PDF, DOCX, PNG, or JPEG format. Maximum upload size is 25MB and only one file will be accepted per submission.</p>
                       </div>
 
                       <label class="native-field native-upload-field">
@@ -1098,7 +1098,7 @@ const accessErrorMessage =
                           <span class="native-dropzone-content">
                             <span class="native-dropzone-text">
                               <span class="native-dropzone-title">Drag & drop files here, or click to select</span>
-                              <span class="native-dropzone-help">One PDF, DOCX, PNG, or JPEG up to 5MB</span>
+                              <span class="native-dropzone-help">One PDF, DOCX, PNG, or JPEG up to 25MB</span>
                             </span>
                           </span>
                         </span>
