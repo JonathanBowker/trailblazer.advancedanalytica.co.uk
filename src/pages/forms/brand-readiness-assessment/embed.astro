@@ -7,8 +7,8 @@ import {
 } from '../../../lib/trailblazerEmbedAuth';
 import baseThemeCss from '../../../themes/base.css?raw';
 import {
-  disneyAssetTypes,
   disneyDestinationOptions,
+  visibleDisneyAssetTypes,
 } from '../../../data/disneySubmissionTaxonomy';
 
 export const prerender = false;
@@ -1051,7 +1051,7 @@ const accessErrorMessage =
                           Asset type
                           <select class="native-select" name="assetType" required data-asset-type>
                             <option value="">Select an asset type</option>
-                            {disneyAssetTypes.map((option) => (
+                            {visibleDisneyAssetTypes.map((option) => (
                               <option value={option.value}>{option.label}</option>
                             ))}
                           </select>

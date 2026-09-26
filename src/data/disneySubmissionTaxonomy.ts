@@ -225,6 +225,19 @@ export const disneyAssetTypes = [
   },
 ] as const;
 
+const hiddenDisneyAssetTypeValues = new Set([
+  'offer_price_promotion',
+  'image_only_creative',
+  'image_and_copy_creative',
+  'photo_montage',
+  'partner_cobranded_creative',
+  'organic_editorial_informational',
+]);
+
+export const visibleDisneyAssetTypes = disneyAssetTypes.filter(
+  (option) => !hiddenDisneyAssetTypeValues.has(option.value)
+);
+
 export type DisneyAssetTypeValue = (typeof disneyAssetTypes)[number]['value'];
 export type DisneyChannelValue = (typeof disneyChannelOptions)[number]['value'];
 export type DisneyCompositionValue = (typeof disneyCompositionOptions)[number]['value'];
