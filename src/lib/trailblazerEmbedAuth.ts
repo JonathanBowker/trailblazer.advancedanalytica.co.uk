@@ -38,6 +38,24 @@ function cleanEmail(value: unknown) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
 }
 
+function readEnv(name: string) {
+  const env = import.meta.env as Record<string, string | undefined>;
+  return env[name] || process.env[name] || '';
+}
+
+function getApprovedEmbedEmails() {
+  return new Set(
+    readEnv('TRAILBLAZER_APPROVED_EMBED_EMAILS')
+      .split(',')
+      .map((value) => cleanEmail(value))
+      .filter(Boolean),
+  );
+}
+
+function isApprovedEmbedEmail(email: string) {
+  return Boolean(email && getApprovedEmbedEmails().has(email));
+}
+
 function readParam(source: URLSearchParams | FormData, key: string) {
   return source.get(key);
 }
@@ -120,7 +138,7 @@ function decodeCookieValue(value: string | undefined): TrailblazerEmbedClaims | 
       company: cleanText(parsed.company, 120),
     };
 
-    return claims.uid && claims.token ? claims : null;
+    return claims.uid && (claims.token || isApprovedEmbedEmail(claims.email)) ? claims : null;
   } catch {
     return null;
   }
@@ -147,12 +165,7 @@ async function writeValidGuidList(list: string[]) {
 }
 
 function getRuntimeGuidFilePath() {
-  const env = import.meta.env as Record<string, string | undefined>;
-  return (
-    env.TRAILBLAZER_VALID_GUIDS_FILE ||
-    process.env.TRAILBLAZER_VALID_GUIDS_FILE ||
-    defaultRuntimeGuidFilePath
-  );
+  return readEnv('TRAILBLAZER_VALID_GUIDS_FILE') || defaultRuntimeGuidFilePath;
 }
 
 async function consumeValidGuid(token: string) {
@@ -215,7 +228,17 @@ export async function consumeTrailblazerEmbedSession(
   requestUrl?: URL,
 ): Promise<TrailblazerEmbedSession> {
   const claims = toClaims(source);
-  if (!claims.uid || !claims.token) return invalidSession(claims);
+  if (!claims.uid) return invalidSession(claims);
+
+  if (isApprovedEmbedEmail(claims.email)) {
+    storeTrailblazerEmbedSessionCookie(cookies, claims, requestUrl);
+    return {
+      isValid: true,
+      ...claims,
+    };
+  }
+
+  if (!claims.token) return invalidSession(claims);
 
   const cookieSession = readTrailblazerEmbedSessionCookie(cookies);
   if (claimsMatch(cookieSession.isValid ? cookieSession : null, claims)) {
@@ -244,7 +267,16 @@ export function verifyTrailblazerEmbedSessionFromCookie(
   cookies: AstroCookies,
 ): TrailblazerEmbedSession {
   const claims = toClaims(source);
-  if (!claims.uid || !claims.token) return invalidSession(claims);
+  if (!claims.uid) return invalidSession(claims);
+
+  if (isApprovedEmbedEmail(claims.email)) {
+    return {
+      isValid: true,
+      ...claims,
+    };
+  }
+
+  if (!claims.token) return invalidSession(claims);
 
   const cookieSession = readTrailblazerEmbedSessionCookie(cookies);
   if (!claimsMatch(cookieSession.isValid ? cookieSession : null, claims)) {

@@ -28,6 +28,9 @@ services:
       - key: NODE_OPTIONS
         value: --max-http-header-size=131072
         scope: RUN_TIME
+      - key: TRAILBLAZER_APPROVED_EMBED_EMAILS
+        value: claire@frontpage.co.uk,paula@frontpage.co.uk,rhiannon@frontpage.co.uk,daniel@frontpage.co.uk
+        scope: RUN_TIME
       - key: PREFECT_TRIGGER_API_URL
         value: http://188.166.152.62:8080
         scope: RUN_TIME
