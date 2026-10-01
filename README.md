@@ -28,6 +28,8 @@ the Umbraco user id.
 Known MagiKit iframe submitters can also be approved by email with
 `TRAILBLAZER_APPROVED_EMBED_EMAILS`. This allows named portal users through the
 embed route when their `email` query/form value matches the configured list.
+If MagiKit cannot pass `email` in the iframe URL, use
+`TRAILBLAZER_APPROVED_EMBED_USERS` as a comma-separated `uid=email` map.
 
 Optional query parameters are also supported and will be carried through to the
 submission metadata:

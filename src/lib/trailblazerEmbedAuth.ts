@@ -56,6 +56,39 @@ function isApprovedEmbedEmail(email: string) {
   return Boolean(email && getApprovedEmbedEmails().has(email));
 }
 
+function getApprovedEmbedUsers() {
+  const users = new Map<string, string>();
+
+  for (const entry of readEnv('TRAILBLAZER_APPROVED_EMBED_USERS').split(',')) {
+    const [rawUid, rawEmail] = entry.split('=', 2);
+    const uid = cleanText(rawUid, 128);
+    const email = cleanEmail(rawEmail);
+    if (uid && email) users.set(uid, email);
+  }
+
+  return users;
+}
+
+function applyApprovedUserFallback(claims: TrailblazerEmbedClaims): TrailblazerEmbedClaims {
+  const approvedEmail = getApprovedEmbedUsers().get(claims.uid);
+  if (!approvedEmail) return claims;
+
+  const email = claims.email || approvedEmail;
+  const name = claims.name && claims.name !== claims.uid ? claims.name : email.split('@')[0];
+
+  return {
+    ...claims,
+    email,
+    name,
+    company: claims.company || 'Frontpage',
+  };
+}
+
+function isApprovedEmbedUser(claims: TrailblazerEmbedClaims) {
+  const approvedEmail = getApprovedEmbedUsers().get(claims.uid);
+  return Boolean(approvedEmail && (!claims.email || claims.email === approvedEmail));
+}
+
 function readParam(source: URLSearchParams | FormData, key: string) {
   return source.get(key);
 }
@@ -72,13 +105,13 @@ function toClaims(source: URLSearchParams | FormData): TrailblazerEmbedClaims {
   const name = cleanText(readParam(source, 'name'), 120) || (email ? email.split('@')[0] : uid);
   const company = cleanText(readParam(source, 'company'), 120);
 
-  return {
+  return applyApprovedUserFallback({
     uid,
     token,
     name,
     email,
     company,
-  };
+  });
 }
 
 function invalidSession(claims?: Partial<TrailblazerEmbedClaims>): TrailblazerEmbedSession {
@@ -138,7 +171,9 @@ function decodeCookieValue(value: string | undefined): TrailblazerEmbedClaims | 
       company: cleanText(parsed.company, 120),
     };
 
-    return claims.uid && (claims.token || isApprovedEmbedEmail(claims.email)) ? claims : null;
+    return claims.uid && (claims.token || isApprovedEmbedEmail(claims.email) || isApprovedEmbedUser(claims))
+      ? claims
+      : null;
   } catch {
     return null;
   }
@@ -230,7 +265,7 @@ export async function consumeTrailblazerEmbedSession(
   const claims = toClaims(source);
   if (!claims.uid) return invalidSession(claims);
 
-  if (isApprovedEmbedEmail(claims.email)) {
+  if (isApprovedEmbedEmail(claims.email) || isApprovedEmbedUser(claims)) {
     storeTrailblazerEmbedSessionCookie(cookies, claims, requestUrl);
     return {
       isValid: true,
@@ -269,7 +304,7 @@ export function verifyTrailblazerEmbedSessionFromCookie(
   const claims = toClaims(source);
   if (!claims.uid) return invalidSession(claims);
 
-  if (isApprovedEmbedEmail(claims.email)) {
+  if (isApprovedEmbedEmail(claims.email) || isApprovedEmbedUser(claims)) {
     return {
       isValid: true,
       ...claims,
