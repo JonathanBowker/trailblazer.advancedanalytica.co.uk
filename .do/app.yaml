@@ -29,10 +29,10 @@ services:
         value: --max-http-header-size=131072
         scope: RUN_TIME
       - key: TRAILBLAZER_APPROVED_EMBED_EMAILS
-        value: claire@frontpage.co.uk,paula@frontpage.co.uk,rhiannon@frontpage.co.uk,daniel@frontpage.co.uk
+        value: claire@frontpage.co.uk,paula@frontpage.co.uk,rhiannon@frontpage.co.uk,daniel@frontpage.co.uk,nicole.humphreys@carrier.co.uk,jess@quintessentiallytravel.com,lauren.godfrey@wingedboots.co.uk,abby@360privatetravel.com,lauraprice@designertravel.co.uk,mtroy@abbeytravel.ie,kian@magicbreaks.co.uk,kelly@magicbreaks.co.uk,hadassa@magicbreaks.co.uk,rhiannon@imaginary-friends.studio,michelle.westwood@disney.com,lucie.preece@disney.com,nicole.horlock@disney.com,lizi.bostock@disney.com,alice.murphy@disney.com,paul.heustice@disney.com,gabrielle.rogers@disney.com,max.mason@disney.com
         scope: RUN_TIME
       - key: TRAILBLAZER_APPROVED_EMBED_USERS
-        value: 63=claire@frontpage.co.uk,16=paula@frontpage.co.uk,21=rhiannon@frontpage.co.uk,11=daniel@frontpage.co.uk
+        value: 63=claire@frontpage.co.uk,16=paula@frontpage.co.uk,11=daniel@frontpage.co.uk,21=rhiannon@imaginary-friends.studio,1825=nicole.humphreys@carrier.co.uk,1777=jess@quintessentiallytravel.com,2262=lauren.godfrey@wingedboots.co.uk,2263=abby@360privatetravel.com,78=mtroy@abbeytravel.ie,2260=kian@magicbreaks.co.uk,79=kelly@magicbreaks.co.uk,2261=hadassa@magicbreaks.co.uk,50=michelle.westwood@disney.com,25=lucie.preece@disney.com,210=nicole.horlock@disney.com,389=lizi.bostock@disney.com,145=alice.murphy@disney.com,43=paul.heustice@disney.com,608=gabrielle.rogers@disney.com,30=max.mason@disney.com
         scope: RUN_TIME
       - key: PREFECT_TRIGGER_API_URL
         value: http://188.166.152.62:8080
