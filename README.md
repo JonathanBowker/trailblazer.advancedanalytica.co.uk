@@ -89,3 +89,30 @@ Live verification run on 2026-10-06. Total time taken: 4.052 seconds.
 | 09:55:17 | 43 | Paul Heustice | paul.heustice@disney.com | Disney | ok | 172 ms |
 | 09:55:17 | 608 | Gaby Rogers | gabrielle.rogers@disney.com | Disney | ok | 121 ms |
 | 09:55:17 | 30 | Max Mason | max.mason@disney.com | Disney | ok | 234 ms |
+
+### 2026-10-06: MagiKit validation errors leaving the iframe
+
+- Status: fixed and deployed.
+- Symptom: Jess from Quintessentially Travel reported a generic
+  `Error code: 503` in Creative Approval. The live iframe and Prefect trigger
+  were healthy when checked, but a related file validation redirect issue was
+  found.
+- Cause: for approved MagiKit users without a GUID token, submit-time
+  validation errors such as unsupported file type redirected to the standard
+  form route instead of staying inside the MagiKit iframe route.
+- Fix: submit redirects now return any MagiKit session with a `uid` to the
+  embed route and preserve the user profile query values. The token is only
+  included when present.
+- Commit: `48ad06c` (`Keep MagiKit submit errors in iframe`).
+- DigitalOcean deployment: `31cc3d19-b4ec-4d57-8bba-b34def15adc9`.
+- GitHub issue:
+  [#3](https://github.com/JonathanBowker/trailblazer.advancedanalytica.co.uk/issues/3)
+  (`completed`).
+
+Verification on 2026-10-06:
+
+- Jess iframe URL returned `200 OK`.
+- Prefect trigger `/health` returned `200 OK`.
+- A `.txt` upload for Jess redirected to
+  `/forms/brand-readiness-assessment/embed?...error=file_type`.
+- The iframe rendered `Upload a PDF, DOCX, PNG, or JPEG file.`
