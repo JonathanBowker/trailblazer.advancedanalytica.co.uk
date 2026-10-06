@@ -22,6 +22,12 @@ type TrailblazerEmbedClaims = {
   company: string;
 };
 
+type ApprovedEmbedUser = {
+  email: string;
+  name: string;
+  company: string;
+};
+
 export type TrailblazerEmbedSession = TrailblazerEmbedClaims & {
   isValid: boolean;
 };
@@ -57,36 +63,46 @@ function isApprovedEmbedEmail(email: string) {
 }
 
 function getApprovedEmbedUsers() {
-  const users = new Map<string, string>();
+  const users = new Map<string, ApprovedEmbedUser>();
 
   for (const entry of readEnv('TRAILBLAZER_APPROVED_EMBED_USERS').split(',')) {
-    const [rawUid, rawEmail] = entry.split('=', 2);
+    const [rawUid, rawProfile] = entry.split('=', 2);
+    const [rawEmail, rawName, rawCompany] = String(rawProfile || '').split('|');
     const uid = cleanText(rawUid, 128);
     const email = cleanEmail(rawEmail);
-    if (uid && email) users.set(uid, email);
+    const name = cleanText(rawName, 120);
+    const company = cleanText(rawCompany, 120);
+
+    if (uid && email) {
+      users.set(uid, {
+        email,
+        name,
+        company,
+      });
+    }
   }
 
   return users;
 }
 
 function applyApprovedUserFallback(claims: TrailblazerEmbedClaims): TrailblazerEmbedClaims {
-  const approvedEmail = getApprovedEmbedUsers().get(claims.uid);
-  if (!approvedEmail) return claims;
+  const approvedUser = getApprovedEmbedUsers().get(claims.uid);
+  if (!approvedUser) return claims;
 
-  const email = claims.email || approvedEmail;
-  const name = claims.name && claims.name !== claims.uid ? claims.name : email.split('@')[0];
+  const email = claims.email || approvedUser.email;
+  const name = claims.name && claims.name !== claims.uid ? claims.name : approvedUser.name || email.split('@')[0];
 
   return {
     ...claims,
     email,
     name,
-    company: claims.company || 'Frontpage',
+    company: claims.company || approvedUser.company,
   };
 }
 
 function isApprovedEmbedUser(claims: TrailblazerEmbedClaims) {
-  const approvedEmail = getApprovedEmbedUsers().get(claims.uid);
-  return Boolean(approvedEmail && (!claims.email || claims.email === approvedEmail));
+  const approvedUser = getApprovedEmbedUsers().get(claims.uid);
+  return Boolean(approvedUser && (!claims.email || claims.email === approvedUser.email));
 }
 
 function readParam(source: URLSearchParams | FormData, key: string) {
