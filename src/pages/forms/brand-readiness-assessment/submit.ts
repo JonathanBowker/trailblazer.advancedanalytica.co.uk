@@ -44,11 +44,11 @@ function cleanText(value: FormDataEntryValue | null) {
 
 function redirectToForm(params: Record<string, string>, embedSession?: ReturnType<typeof getTrailblazerEmbedSession>) {
   const search = new URLSearchParams(params);
-  const targetPath = embedSession?.uid && embedSession?.token ? trailblazerEmbedFormPath : '/forms/brand-readiness-assessment';
+  const targetPath = embedSession?.uid ? trailblazerEmbedFormPath : '/forms/brand-readiness-assessment';
 
-  if (embedSession?.uid && embedSession?.token) {
+  if (embedSession?.uid) {
     search.set('uid', embedSession.uid);
-    search.set('token', embedSession.token);
+    if (embedSession.token) search.set('token', embedSession.token);
     if (embedSession.name) search.set('name', embedSession.name);
     if (embedSession.email) search.set('email', embedSession.email);
     if (embedSession.company) search.set('company', embedSession.company);
